@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mic, Smile, Play, Search, MapPin, Calendar, Clock } from 'lucide-react';
+import { Send, Mic, Smile, Play, Search, MapPin, Calendar, Clock, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
 import chatbotAvatar from '@/assets/chatbot-avatar.png';
 import heroImage from '@/assets/hero-museum.jpg';
 
@@ -16,6 +18,7 @@ interface Message {
 }
 
 const Chatbot = () => {
+  const { user, loading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -71,7 +74,7 @@ const Chatbot = () => {
   };
 
   const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() || !user) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -306,34 +309,68 @@ const Chatbot = () => {
 
                 {/* Input Area */}
                 <div className="p-6 border-t border-border/20">
-                  <div className="flex space-x-3">
-                    <div className="flex-1 relative">
-                      <Input
-                        placeholder="Type your message here..."
-                        value={inputMessage}
-                        onChange={(e) => setInputMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        className="h-12 pr-20 glass border-border/20 focus:border-golden"
-                      />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-1">
-                        <EnhancedButton variant="ghost" size="icon" className="h-8 w-8">
-                          <Smile className="w-4 h-4" />
-                        </EnhancedButton>
-                        <EnhancedButton variant="ghost" size="icon" className="h-8 w-8">
-                          <Mic className="w-4 h-4" />
-                        </EnhancedButton>
+                  {!loading && !user ? (
+                    /* Unauthorized State */
+                    <div className="space-y-4">
+                      <div className="flex space-x-3">
+                        <div className="flex-1 relative">
+                          <Input
+                            placeholder="🔒 Please Login or Signup to start chatting with MuseMate"
+                            disabled
+                            className="h-12 pr-20 glass border-border/20 bg-muted/30 cursor-not-allowed"
+                          />
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <Lock className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-center space-x-3">
+                        <Link to="/login">
+                          <EnhancedButton variant="hero" size="sm">
+                            Login
+                          </EnhancedButton>
+                        </Link>
+                        <span className="text-muted-foreground">or</span>
+                        <Link to="/signup">
+                          <EnhancedButton variant="premium" size="sm">
+                            Sign Up
+                          </EnhancedButton>
+                        </Link>
                       </div>
                     </div>
-                    <EnhancedButton
-                      variant="hero"
-                      size="icon"
-                      onClick={handleSendMessage}
-                      disabled={!inputMessage.trim()}
-                      className="h-12 w-12"
-                    >
-                      <Send className="w-5 h-5" />
-                    </EnhancedButton>
-                  </div>
+                  ) : (
+                    /* Authorized State */
+                    <div className="flex space-x-3">
+                      <div className="flex-1 relative">
+                        <Input
+                          placeholder="Type your message here..."
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className="h-12 pr-20 glass border-border/20 focus:border-golden"
+                          disabled={loading}
+                        />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-1">
+                          <EnhancedButton variant="ghost" size="icon" className="h-8 w-8" disabled={loading}>
+                            <Smile className="w-4 h-4" />
+                          </EnhancedButton>
+                          <EnhancedButton variant="ghost" size="icon" className="h-8 w-8" disabled={loading}>
+                            <Mic className="w-4 h-4" />
+                          </EnhancedButton>
+                        </div>
+                      </div>
+                      <EnhancedButton
+                        variant="hero"
+                        size="icon"
+                        onClick={handleSendMessage}
+                        disabled={!inputMessage.trim() || loading}
+                        className="h-12 w-12"
+                      >
+                        <Send className="w-5 h-5" />
+                      </EnhancedButton>
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>

@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Settings, LogOut, Building2, MessageCircle, MapPin, Calendar } from 'lucide-react';
+import { User, Settings, LogOut, Building2, MessageCircle, MapPin, Calendar, ChevronDown, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,14 +9,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { EnhancedButton } from '@/components/ui/enhanced-button';
+import { useAuth } from '@/hooks/useAuth';
 
 const Navigation = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, profile, signOut, isAdmin, loading } = useAuth();
   
   const navLinks = [
-    { href: '/', label: 'Dashboard', icon: Building2 },
+    { href: '/dashboard', label: 'Dashboard', icon: Building2 },
     { href: '/chatbot', label: 'MuseMate', icon: MessageCircle },
     { href: '/museums', label: 'Museums', icon: MapPin },
     { href: '/trips', label: 'My Trips', icon: Calendar },
@@ -33,7 +37,7 @@ const Navigation = () => {
         <div className="flex items-center justify-between">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
+          <Link to="/dashboard" className="flex items-center space-x-3 group">
             <motion.div
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.6 }}
@@ -69,36 +73,81 @@ const Navigation = () => {
             ))}
           </div>
 
-          {/* Profile Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full glow-hover">
-                <Avatar className="h-10 w-10 border border-golden/20">
-                  <AvatarFallback className="bg-card text-golden font-semibold">
-                    MU
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              className="w-56 bg-card/95 border-border/20 glass mt-2"
-              align="end"
-            >
-              <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer">
-                <User className="w-4 h-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer">
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-border/20" />
-              <DropdownMenuItem className="flex items-center space-x-2 cursor-pointer text-destructive">
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Authentication Controls */}
+          {loading ? (
+            <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+          ) : user ? (
+            /* Profile Dropdown */
+            <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+              <DropdownMenuTrigger asChild>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center space-x-2 p-2 rounded-xl glass border border-border/20 hover:border-golden/50 transition-all duration-300 hover:glow-golden"
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-gradient-primary text-black font-semibold">
+                      {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </motion.button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 glass border-border/20 bg-background/95 backdrop-blur-sm"
+              >
+                <div className="px-3 py-2 border-b border-border/20">
+                  <p className="text-sm font-medium text-foreground">
+                    {profile?.first_name} {profile?.last_name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  {isAdmin && (
+                    <span className="inline-flex items-center text-xs text-golden font-medium mt-1">
+                      <Shield className="w-3 h-3 mr-1" />
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <DropdownMenuItem className="hover:bg-accent/50">
+                  <User className="w-4 h-4 mr-2" />
+                  My Trips
+                </DropdownMenuItem>
+                <DropdownMenuItem className="hover:bg-accent/50">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem className="hover:bg-accent/50 text-golden">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin Panel
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator className="bg-border/20" />
+                <DropdownMenuItem 
+                  className="hover:bg-accent/50 text-red-400"
+                  onClick={signOut}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            /* Login/Signup Buttons */
+            <div className="flex items-center space-x-3">
+              <Link to="/login">
+                <EnhancedButton variant="ghost" size="sm" className="glass border-border/20 hover:border-golden/50 hover:glow-golden">
+                  Login
+                </EnhancedButton>
+              </Link>
+              <Link to="/signup">
+                <EnhancedButton variant="hero" size="sm">
+                  Sign Up
+                </EnhancedButton>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </motion.nav>
