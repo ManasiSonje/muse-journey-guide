@@ -48,12 +48,14 @@ export const useMuseums = () => {
 
   // Get unique cities and types for filters
   const cities = useMemo(() => {
-    const uniqueCities = [...new Set(museums.map(museum => museum.city))];
+    const uniqueCities = [...new Set(museums.map(museum => (museum.city ?? '').trim()))]
+      .filter((c) => c.length > 0);
     return uniqueCities.sort();
   }, [museums]);
 
   const types = useMemo(() => {
-    const uniqueTypes = [...new Set(museums.map(museum => museum.type))];
+    const uniqueTypes = [...new Set(museums.map(museum => (museum.type ?? '').trim()))]
+      .filter((t) => t.length > 0);
     return uniqueTypes.sort();
   }, [museums]);
 
@@ -61,10 +63,10 @@ export const useMuseums = () => {
   const filteredMuseums = useMemo(() => {
     return museums.filter(museum => {
       const matchesSearch = !searchQuery || 
-        museum.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        museum.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        museum.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        museum.description.toLowerCase().includes(searchQuery.toLowerCase());
+        (museum.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (museum.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (museum.type || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (museum.description || '').toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCity = selectedCity === 'all' || museum.city === selectedCity;
       const matchesType = selectedType === 'all' || museum.type === selectedType;
