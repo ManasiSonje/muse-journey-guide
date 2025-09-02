@@ -4,55 +4,31 @@ import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Sparkles } from 'lu
 import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
-import { Input } from '@/components/ui/input';
 import MuseumCard from '@/components/MuseumCard';
+import MuseumSearchFilters from '@/components/MuseumSearchFilters';
+import { useMuseums } from '@/hooks/useMuseums';
 import heroImage from '@/assets/hero-museum.jpg';
-import museumsImage from '@/assets/museums-collage.jpg';
 
 const Dashboard = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Mock museum data
-  const featuredMuseums = [
-    {
-      id: '1',
-      name: 'Metropolitan Museum of Art',
-      location: 'New York, NY',
-      image: museumsImage,
-      rating: 4.8,
-      openHours: '10:00 AM - 5:00 PM',
-      category: 'Art & Culture'
-    },
-    {
-      id: '2',
-      name: 'Louvre Museum',
-      location: 'Paris, France',
-      image: museumsImage,
-      rating: 4.9,
-      openHours: '9:00 AM - 6:00 PM',
-      category: 'History & Art'
-    },
-    {
-      id: '3',
-      name: 'British Museum',
-      location: 'London, UK',
-      image: museumsImage,
-      rating: 4.7,
-      openHours: '10:00 AM - 5:30 PM',
-      category: 'History'
-    }
-  ];
+  const {
+    museums,
+    loading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    selectedCity,
+    setSelectedCity,
+    selectedType,
+    setSelectedType,
+    cities,
+    types
+  } = useMuseums();
 
-  const handleMuseumSearch = (query: string) => {
-    setSearchQuery(query);
-    // Implementation for museum search
-  };
-
-  const handleViewMore = (id: string) => {
+  const handleViewMore = (id: number) => {
     console.log('View museum:', id);
   };
 
-  const handleBookTicket = (id: string) => {
+  const handleBookTicket = (id: number) => {
     console.log('Book ticket for:', id);
   };
 
@@ -95,9 +71,9 @@ const Dashboard = () => {
                   transition={{ delay: 0.4 }}
                   className="text-xl text-muted-foreground max-w-lg leading-relaxed"
                 >
-                  Plan your museum journey with our smart AI-powered assistant, 
+                  Discover amazing museums across Maharashtra with our smart AI-powered assistant, 
                   <span className="text-teal font-medium"> MuseMate</span>. 
-                  Discover world-class exhibitions and create unforgettable cultural experiences.
+                  Explore rich cultural heritage and create unforgettable experiences.
                 </motion.p>
               </div>
               
@@ -166,55 +142,97 @@ const Dashboard = () => {
             className="text-center mb-12"
           >
             <h2 className="font-display text-4xl font-bold text-foreground mb-4">
-              Find Your Perfect
-              <span className="text-glow-golden"> Museum Experience</span>
+              Explore Museums in
+              <span className="text-glow-golden"> Maharashtra</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Search for museums by city, name, or category and discover amazing cultural treasures around the world.
+              Discover Maharashtra's rich cultural heritage through its museums. Search by name, city, or type to find your perfect visit.
             </p>
           </motion.div>
 
-          {/* Search Bar */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto mb-16"
-          >
-            <div className="relative">
-              <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-muted-foreground w-6 h-6" />
-              <Input
-                placeholder="Search for Museums by City, Name, or Category..."
-                value={searchQuery}
-                onChange={(e) => handleMuseumSearch(e.target.value)}
-                className="h-16 pl-16 pr-6 text-lg rounded-2xl glass border-border/20 focus:border-golden focus:glow-golden bg-card/50"
-              />
-            </div>
-          </motion.div>
+          {/* Search and Filters */}
+          <div className="max-w-5xl mx-auto mb-16">
+            <MuseumSearchFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedCity={selectedCity}
+              onCityChange={setSelectedCity}
+              selectedType={selectedType}
+              onTypeChange={setSelectedType}
+              cities={cities}
+              types={types}
+              resultsCount={museums.length}
+            />
+          </div>
 
-          {/* Featured Museums */}
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {featuredMuseums.map((museum, index) => (
-              <motion.div
-                key={museum.id}
-                initial={{ y: 50, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 border-4 border-golden/20 border-t-golden rounded-full animate-spin mb-4"></div>
+              <p className="text-muted-foreground">Loading museums...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="text-center py-12">
+              <p className="text-destructive mb-4">Error loading museums: {error}</p>
+              <EnhancedButton 
+                variant="outline" 
+                onClick={() => window.location.reload()}
               >
-                <MuseumCard
-                  {...museum}
-                  onViewMore={handleViewMore}
-                  onBookTicket={handleBookTicket}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+                Try Again
+              </EnhancedButton>
+            </div>
+          )}
+
+          {/* Museums Grid */}
+          {!loading && !error && (
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {museums.length > 0 ? (
+                museums.map((museum, index) => (
+                  <motion.div
+                    key={museum.id}
+                    initial={{ y: 50, opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <MuseumCard
+                      {...museum}
+                      onViewMore={handleViewMore}
+                      onBookTicket={handleBookTicket}
+                    />
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/20 flex items-center justify-center">
+                    <Search className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No museums found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Try adjusting your search terms or filters to find museums.
+                  </p>
+                  <EnhancedButton 
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedCity('');
+                      setSelectedType('');
+                    }}
+                  >
+                    Clear Filters
+                  </EnhancedButton>
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
       </section>
 

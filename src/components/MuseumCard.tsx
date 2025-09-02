@@ -3,19 +3,23 @@ import { MapPin, Clock, Star, ArrowRight } from 'lucide-react';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 
 interface MuseumCardProps {
-  id: string;
+  id: number;
   name: string;
-  location: string;
-  image: string;
-  rating: number;
-  openHours: string;
-  category: string;
-  onViewMore: (id: string) => void;
-  onBookTicket: (id: string) => void;
+  city: string;
+  established?: string;
+  type: string;
+  description: string;
+  address?: string;
+  timings?: string;
+  entry_fee?: string;
+  contact?: string;
+  website?: string;
+  onViewMore: (id: number) => void;
+  onBookTicket: (id: number) => void;
 }
 
 const MuseumCard = ({ 
-  id, name, location, image, rating, openHours, category, onViewMore, onBookTicket 
+  id, name, city, established, type, description, address, timings, entry_fee, contact, website, onViewMore, onBookTicket 
 }: MuseumCardProps) => {
   return (
     <motion.div
@@ -24,25 +28,26 @@ const MuseumCard = ({
       className="group relative overflow-hidden rounded-2xl bg-card/50 glass border border-border/20 shadow-premium hover:shadow-elevated"
     >
       {/* Image */}
-      <div className="relative h-48 overflow-hidden">
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover transition-smooth group-hover:scale-110"
-        />
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-golden/20 via-teal/10 to-accent/20">
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         
-        {/* Category Badge */}
+        {/* Type Badge */}
         <div className="absolute top-4 left-4">
           <span className="glass-strong text-xs font-medium px-3 py-1 rounded-full text-golden border border-golden/20">
-            {category}
+            {type}
           </span>
         </div>
         
-        {/* Rating */}
-        <div className="absolute top-4 right-4 flex items-center space-x-1 glass-strong px-2 py-1 rounded-full">
-          <Star className="w-4 h-4 text-golden fill-current" />
-          <span className="text-sm font-medium text-foreground">{rating}</span>
+        {/* Established Year */}
+        {established && (
+          <div className="absolute top-4 right-4 flex items-center space-x-1 glass-strong px-2 py-1 rounded-full">
+            <span className="text-sm font-medium text-foreground">Est. {established}</span>
+          </div>
+        )}
+
+        {/* Decorative Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="w-full h-full bg-gradient-to-br from-golden via-transparent to-teal" />
         </div>
       </div>
 
@@ -54,13 +59,35 @@ const MuseumCard = ({
           </h3>
           <div className="flex items-center space-x-2 mt-2 text-muted-foreground">
             <MapPin className="w-4 h-4" />
-            <span className="text-sm">{location}</span>
+            <span className="text-sm">{city}</span>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 text-muted-foreground">
-          <Clock className="w-4 h-4" />
-          <span className="text-sm">{openHours}</span>
+        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+          {description}
+        </p>
+
+        <div className="space-y-2">
+          {timings && (
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm">{timings}</span>
+            </div>
+          )}
+          
+          {entry_fee && (
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <span className="w-4 h-4 text-center text-xs">₹</span>
+              <span className="text-sm">{entry_fee}</span>
+            </div>
+          )}
+
+          {address && (
+            <div className="flex items-start space-x-2 text-muted-foreground">
+              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span className="text-sm line-clamp-2">{address}</span>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

@@ -1,0 +1,79 @@
+{
+  "museums": [
+    {
+      "id": 1,
+      "name": "Chhatrapati Shivaji Maharaj Vastu Sangrahalaya",
+      "city": "Mumbai",
+      "established": "1922",
+      "type": "Art, Archaeology, Natural History",
+      "description": "Houses ~50,000 artefacts across art, archaeology and natural history, including maritime heritage galleries." :contentReference[oaicite:0]{index=0}
+    },
+    {
+      "id": 2,
+      "name": "Dr. Bhau Daji Lad Museum",
+      "city": "Mumbai",
+      "established": "1872",
+      "type": "Decorative & Industrial Arts",
+      "description": "Mumbai's oldest museum focused on decorative and industrial arts." :contentReference[oaicite:1]{index=1}
+    },
+    {
+      "id": 3,
+      "name": "Raja Dinkar Kelkar Museum",
+      "city": "Pune",
+      "type": "Folk Art & Ancient Artifacts",
+      "description": "Home to over 20,000 Indian cultural artefacts including sculptures, utensils and music instruments." :contentReference[oaicite:2]{index=2}
+    },
+    {
+      "id": 4,
+      "name": "Nagpur Central Museum (Ajab Bangla)",
+      "city": "Nagpur",
+      "established": "1863",
+      "type": "Archaeology, Anthropology, Natural History",
+      "description": "One of the oldest museums in India with diverse collections." :contentReference[oaicite:3]{index=3}
+    },
+    {
+      "id": 5,
+      "name": "Cavalry Tank Museum",
+      "city": "Ahmednagar",
+      "type": "Military / Armored Vehicles",
+      "description": "Asia’s only tank museum, showcasing WW-II era tanks and armoured vehicles." :contentReference[oaicite:4]{index=4}
+    },
+    {
+      "id": 6,
+      "name": "Gargoti Museum",
+      "city": "Sinnar (Nashik District)",
+      "type": "Mineralogical Museum",
+      "description": "India’s only gem, mineral and fossil museum with largest collection of Indian zeolite minerals & crystals." :contentReference[oaicite:5]{index=5}
+    },
+    {
+      "id": 7,
+      "name": "National Museum of Indian Cinema",
+      "city": "Mumbai",
+      "established": "2019",
+      "type": "Film Museum",
+      "description": "Museum dedicated to history and development of Indian cinema housed across restored heritage and modern galleries." :contentReference[oaicite:6]{index=6}
+    },
+    {
+      "id": 8,
+      "name": "Zapurza Museum of Art & Culture",
+      "city": "Pune District",
+      "established": "2022-05-19",
+      "type": "Art & Cultural Heritage",
+      "description": "Art museum showcasing heirlooms, textiles, paintings, rotating artifacts collected over decades." :contentReference[oaicite:7]{index=7}
+    },
+    {
+      "id": 9,
+      "name": "National Gallery of Modern Art, Mumbai",
+      "city": "Mumbai",
+      "type": "Modern Art Gallery",
+      "description": "Museum of modern art in Mumbai, under NGMA network." :contentReference[oaicite:8]{index=8}
+    },
+    {
+      "id": 10,
+      "name": "Joshi's Museum of Miniature Railway",
+      "city": "Pune",
+      "type": "Miniature Railway",
+      "description": "Specialty museum showcasing detailed working miniature railway models." :contentReference[oaicite:9]{index=9}
+    }
+  ]
+}
