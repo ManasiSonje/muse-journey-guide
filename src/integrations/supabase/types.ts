@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      museums: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact: string | null
+          created_at: string
+          description: string | null
+          entry_fee: string | null
+          established: string | null
+          id: number
+          name: string
+          timings: string | null
+          type: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          description?: string | null
+          entry_fee?: string | null
+          established?: string | null
+          id: number
+          name: string
+          timings?: string | null
+          type?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact?: string | null
+          created_at?: string
+          description?: string | null
+          entry_fee?: string | null
+          established?: string | null
+          id?: number
+          name?: string
+          timings?: string | null
+          type?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           city: string | null
@@ -58,7 +106,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_museums: {
+        Args: {
+          search_city?: string
+          search_name?: string
+          search_type?: string
+        }
+        Returns: {
+          address: string | null
+          city: string | null
+          contact: string | null
+          created_at: string
+          description: string | null
+          entry_fee: string | null
+          established: string | null
+          id: number
+          name: string
+          timings: string | null
+          type: string | null
+          updated_at: string
+          website: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
