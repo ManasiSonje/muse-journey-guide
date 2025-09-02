@@ -1,21 +1,20 @@
 import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Museum {
   id: number;
   name: string;
-  city: string;
-  established?: string;
-  type: string;
-  description: string;
-  address?: string;
-  timings?: string;
-  entry_fee?: string;
-  contact?: string;
-  website?: string;
-}
-
-interface MuseumsData {
-  museums: Museum[];
+  city: string | null;
+  established?: string | null;
+  type: string | null;
+  description: string | null;
+  address?: string | null;
+  timings?: string | null;
+  entry_fee?: string | null;
+  contact?: string | null;
+  website?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const useMuseums = () => {
@@ -26,18 +25,23 @@ export const useMuseums = () => {
   const [selectedCity, setSelectedCity] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
 
-  // Fetch museums data
+  // Fetch museums data from Supabase
   useEffect(() => {
     const fetchMuseums = async () => {
       try {
-        const response = await fetch('/data/museums.json');
-        if (!response.ok) {
-          throw new Error('Failed to fetch museums');
+        const { data, error } = await supabase
+          .from('museums')
+          .select('*')
+          .order('name');
+
+        if (error) {
+          throw error;
         }
-        const data: MuseumsData = await response.json();
-        setMuseums(data.museums);
+
+        setMuseums(data || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error('Error fetching museums:', err);
       } finally {
         setLoading(false);
       }
@@ -48,15 +52,15 @@ export const useMuseums = () => {
 
   // Get unique cities and types for filters
   const cities = useMemo(() => {
-    const uniqueCities = [...new Set(museums.map(museum => (museum.city ?? '').trim()))]
-      .filter((c) => c.length > 0);
-    return uniqueCities.sort();
+    const uniqueCities = [...new Set(museums.map(museum => museum.city).filter(Boolean))]
+      .sort();
+    return uniqueCities;
   }, [museums]);
 
   const types = useMemo(() => {
-    const uniqueTypes = [...new Set(museums.map(museum => (museum.type ?? '').trim()))]
-      .filter((t) => t.length > 0);
-    return uniqueTypes.sort();
+    const uniqueTypes = [...new Set(museums.map(museum => museum.type).filter(Boolean))]
+      .sort();
+    return uniqueTypes;
   }, [museums]);
 
   // Filter museums based on search query and filters
@@ -75,6 +79,24 @@ export const useMuseums = () => {
     });
   }, [museums, searchQuery, selectedCity, selectedType]);
 
+  // Advanced search function for future use
+  const searchMuseums = async (searchName?: string, searchCity?: string, searchType?: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('search_museums', {
+          search_name: searchName || null,
+          search_city: searchCity || null,
+          search_type: searchType || null
+        });
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Error in advanced search:', err);
+      return [];
+    }
+  };
+
   return {
     museums: filteredMuseums,
     allMuseums: museums,
@@ -87,6 +109,7 @@ export const useMuseums = () => {
     selectedType,
     setSelectedType,
     cities,
-    types
+    types,
+    searchMuseums
   };
 };

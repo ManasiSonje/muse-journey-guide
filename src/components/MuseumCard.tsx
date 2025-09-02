@@ -5,15 +5,15 @@ import { EnhancedButton } from '@/components/ui/enhanced-button';
 interface MuseumCardProps {
   id: number;
   name: string;
-  city: string;
-  established?: string;
-  type: string;
-  description: string;
-  address?: string;
-  timings?: string;
-  entry_fee?: string;
-  contact?: string;
-  website?: string;
+  city: string | null;
+  established?: string | null;
+  type: string | null;
+  description: string | null;
+  address?: string | null;
+  timings?: string | null;
+  entry_fee?: string | null;
+  contact?: string | null;
+  website?: string | null;
   onViewMore: (id: number) => void;
   onBookTicket: (id: number) => void;
 }
@@ -34,7 +34,7 @@ const MuseumCard = ({
         {/* Type Badge */}
         <div className="absolute top-4 left-4">
           <span className="glass-strong text-xs font-medium px-3 py-1 rounded-full text-golden border border-golden/20">
-            {type}
+            {type || 'General Museum'}
           </span>
         </div>
         
@@ -59,12 +59,12 @@ const MuseumCard = ({
           </h3>
           <div className="flex items-center space-x-2 mt-2 text-muted-foreground">
             <MapPin className="w-4 h-4" />
-            <span className="text-sm">{city}</span>
+            <span className="text-sm">{city || 'Location not specified'}</span>
           </div>
         </div>
 
         <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-          {description}
+          {description || 'No description available'}
         </p>
 
         <div className="space-y-2">
