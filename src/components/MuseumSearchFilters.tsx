@@ -58,7 +58,7 @@ const MuseumSearchFilters = ({
                 <SelectValue placeholder="Select City" />
               </SelectTrigger>
               <SelectContent className="glass border-border/20 bg-background/95">
-                <SelectItem value="">All Cities</SelectItem>
+                <SelectItem value="all">All Cities</SelectItem>
                 {cities.map(city => (
                   <SelectItem key={city} value={city}>
                     {city}
@@ -72,7 +72,7 @@ const MuseumSearchFilters = ({
                 <SelectValue placeholder="Select Type" />
               </SelectTrigger>
               <SelectContent className="glass border-border/20 bg-background/95">
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 {types.map(type => (
                   <SelectItem key={type} value={type}>
                     {type}
@@ -90,9 +90,9 @@ const MuseumSearchFilters = ({
       </div>
 
       {/* Active Filters */}
-      {(selectedCity || selectedType) && (
+      {(selectedCity && selectedCity !== 'all' || selectedType && selectedType !== 'all') && (
         <div className="flex flex-wrap gap-2">
-          {selectedCity && (
+          {selectedCity && selectedCity !== 'all' && (
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -100,14 +100,14 @@ const MuseumSearchFilters = ({
             >
               <span>City: {selectedCity}</span>
               <button
-                onClick={() => onCityChange('')}
+                onClick={() => onCityChange('all')}
                 className="text-golden/60 hover:text-golden"
               >
                 ×
               </button>
             </motion.div>
           )}
-          {selectedType && (
+          {selectedType && selectedType !== 'all' && (
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -115,7 +115,7 @@ const MuseumSearchFilters = ({
             >
               <span>Type: {selectedType}</span>
               <button
-                onClick={() => onTypeChange('')}
+                onClick={() => onTypeChange('all')}
                 className="text-teal/60 hover:text-teal"
               >
                 ×

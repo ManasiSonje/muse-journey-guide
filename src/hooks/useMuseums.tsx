@@ -23,8 +23,8 @@ export const useMuseums = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedType, setSelectedType] = useState('');
+  const [selectedCity, setSelectedCity] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
 
   // Fetch museums data
   useEffect(() => {
@@ -66,8 +66,8 @@ export const useMuseums = () => {
         museum.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
         museum.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesCity = !selectedCity || museum.city === selectedCity;
-      const matchesType = !selectedType || museum.type === selectedType;
+      const matchesCity = selectedCity === 'all' || museum.city === selectedCity;
+      const matchesType = selectedType === 'all' || museum.type === selectedType;
 
       return matchesSearch && matchesCity && matchesType;
     });
