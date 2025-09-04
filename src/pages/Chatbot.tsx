@@ -7,14 +7,25 @@ import { EnhancedButton } from '@/components/ui/enhanced-button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import YouTubeVideoEmbed from '@/components/YouTubeVideoEmbed';
 import chatbotAvatar from '@/assets/chatbot-avatar.png';
-import heroImage from '@/assets/hero-museum.jpg';
 
 interface Message {
   id: string;
   content: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+}
+
+interface YouTubeVideo {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  publishedAt: string;
+  channelTitle: string;
+  isLive?: boolean;
 }
 
 const Chatbot = () => {
@@ -38,6 +49,9 @@ const Chatbot = () => {
   
   // Museum video state
   const [selectedMuseum, setSelectedMuseum] = useState('');
+  const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -114,7 +128,37 @@ const Chatbot = () => {
     setTripHours('');
   };
 
-  const searchMuseum = () => {
+  const searchYouTubeVideos = async (museumName: string) => {
+    if (!museumName.trim()) return;
+    
+    setVideoLoading(true);
+    setVideoError(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('youtube-search', {
+        body: { query: museumName }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data.hasResults) {
+        setYoutubeVideos(data.videos);
+      } else {
+        setYoutubeVideos([]);
+        setVideoError('No video found, please try another museum.');
+      }
+    } catch (error) {
+      console.error('Error searching YouTube videos:', error);
+      setVideoError('Failed to search for videos. Please try again.');
+      setYoutubeVideos([]);
+    } finally {
+      setVideoLoading(false);
+    }
+  };
+
+  const searchMuseum = async () => {
     if (!selectedMuseum) return;
     
     const museumMessage: Message = {
@@ -126,6 +170,10 @@ const Chatbot = () => {
     
     setMessages(prev => [...prev, museumMessage]);
     simulateBotResponse(`Museum search: ${selectedMuseum}`);
+    
+    // Search for YouTube videos
+    await searchYouTubeVideos(selectedMuseum);
+    
     setSelectedMuseum('');
   };
 
@@ -170,17 +218,13 @@ const Chatbot = () => {
                   </EnhancedButton>
                 </div>
                 
-                {/* Video Preview */}
-                <div className="relative overflow-hidden rounded-xl h-32 bg-card border border-border/20">
-                  <img
-                    src={heroImage}
-                    alt="Museum preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                    <Play className="w-8 h-8 text-white opacity-80" />
-                  </div>
-                </div>
+                {/* YouTube Video Embed */}
+                <YouTubeVideoEmbed 
+                  videos={youtubeVideos}
+                  query={selectedMuseum}
+                  loading={videoLoading}
+                  error={videoError}
+                />
               </Card>
 
               {/* Trip Planner Section */}
