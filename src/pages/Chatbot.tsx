@@ -18,7 +18,7 @@ interface Message {
   timestamp: Date;
 }
 
-interface YouTubeVideo {
+interface Video {
   id: string;
   title: string;
   description: string;
@@ -26,6 +26,8 @@ interface YouTubeVideo {
   publishedAt: string;
   channelTitle: string;
   isLive?: boolean;
+  platform: 'youtube' | 'vimeo' | 'dailymotion' | 'fallback';
+  embedUrl: string;
 }
 
 const Chatbot = () => {
@@ -49,7 +51,7 @@ const Chatbot = () => {
   
   // Museum video state
   const [selectedMuseum, setSelectedMuseum] = useState('');
-  const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideo[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
 
@@ -142,21 +144,21 @@ const Chatbot = () => {
       if (error) {
         console.error('YouTube API Error:', error);
         setVideoError('Unable to load video right now. Please try again later.');
-        setYoutubeVideos([]);
+        setVideos([]);
         return;
       }
       
       if (data && data.hasResults && data.videos.length > 0) {
-        setYoutubeVideos(data.videos);
+        setVideos(data.videos);
         setVideoError(null);
       } else {
         // Try fallback search with more general terms
         await searchFallbackVideos(museumName);
       }
     } catch (error) {
-      console.error('Error searching YouTube videos:', error);
+      console.error('Error searching videos:', error);
       setVideoError('Unable to load video right now. Please try again later.');
-      setYoutubeVideos([]);
+      setVideos([]);
     } finally {
       setVideoLoading(false);
     }
@@ -177,18 +179,18 @@ const Chatbot = () => {
         });
         
         if (!error && data && data.hasResults && data.videos.length > 0) {
-          setYoutubeVideos(data.videos);
+          setVideos(data.videos);
           setVideoError(`No videos found for "${originalQuery}". Showing related museum content instead.`);
           return;
         }
       }
       
       // If all fallbacks fail
-      setYoutubeVideos([]);
+      setVideos([]);
       setVideoError('No video available for this museum, please try another search.');
     } catch (error) {
       console.error('Fallback search failed:', error);
-      setYoutubeVideos([]);
+      setVideos([]);
       setVideoError('No video available for this museum, please try another search.');
     }
   };
@@ -253,9 +255,9 @@ const Chatbot = () => {
                   </EnhancedButton>
                 </div>
                 
-                {/* YouTube Video Embed */}
+                {/* Video Embed */}
                 <YouTubeVideoEmbed 
-                  videos={youtubeVideos}
+                  videos={videos}
                   query={selectedMuseum}
                   loading={videoLoading}
                   error={videoError}

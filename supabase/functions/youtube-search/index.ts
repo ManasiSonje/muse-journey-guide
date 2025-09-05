@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface YouTubeVideo {
+interface Video {
   id: string;
   title: string;
   description: string;
@@ -14,6 +14,8 @@ interface YouTubeVideo {
   publishedAt: string;
   channelTitle: string;
   isLive?: boolean;
+  platform: 'youtube' | 'vimeo' | 'dailymotion' | 'fallback';
+  embedUrl: string;
 }
 
 serve(async (req) => {
@@ -35,81 +37,21 @@ serve(async (req) => {
       );
     }
 
-    const youtubeApiKey = Deno.env.get('YOUTUBE_API_KEY');
-    if (!youtubeApiKey) {
-      console.error('YouTube API key not configured');
-      return new Response(
-        JSON.stringify({ error: 'YouTube API not configured' }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    let videos: Video[] = [];
 
-    // First, search for live streams
-    const liveSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&eventType=live&maxResults=5&key=${youtubeApiKey}`;
+    // Try YouTube first
+    videos = await searchYouTubeVideos(query);
     
-    console.log('Searching for live streams:', query);
-    const liveResponse = await fetch(liveSearchUrl);
-    const liveData = await liveResponse.json();
-    
-    let videos: YouTubeVideo[] = [];
-    
-    // Process live streams first
-    if (liveData.items && liveData.items.length > 0) {
-      console.log(`Found ${liveData.items.length} live streams`);
-      videos = liveData.items.map((item: any) => ({
-        id: item.id.videoId,
-        title: item.snippet.title,
-        description: item.snippet.description,
-        thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
-        publishedAt: item.snippet.publishedAt,
-        channelTitle: item.snippet.channelTitle,
-        isLive: true
-      }));
+    // If YouTube fails or has no results, try other platforms
+    if (videos.length === 0) {
+      console.log('YouTube search failed, trying alternative platforms');
+      videos = await searchAlternativePlatforms(query);
     }
     
-    // If no live streams found, search for recent videos
+    // If still no results, provide fallback content
     if (videos.length === 0) {
-      console.log('No live streams found, searching for recent videos');
-      const recentSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&order=relevance&maxResults=5&publishedAfter=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&key=${youtubeApiKey}`;
-      
-      const recentResponse = await fetch(recentSearchUrl);
-      const recentData = await recentResponse.json();
-      
-      if (recentData.items && recentData.items.length > 0) {
-        console.log(`Found ${recentData.items.length} recent videos`);
-        videos = recentData.items.map((item: any) => ({
-          id: item.id.videoId,
-          title: item.snippet.title,
-          description: item.snippet.description,
-          thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
-          publishedAt: item.snippet.publishedAt,
-          channelTitle: item.snippet.channelTitle,
-          isLive: false
-        }));
-      } else {
-        // Fallback to general search without date filter
-        console.log('No recent videos found, doing general search');
-        const generalSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&order=relevance&maxResults=5&key=${youtubeApiKey}`;
-        
-        const generalResponse = await fetch(generalSearchUrl);
-        const generalData = await generalResponse.json();
-        
-        if (generalData.items && generalData.items.length > 0) {
-          console.log(`Found ${generalData.items.length} general videos`);
-          videos = generalData.items.map((item: any) => ({
-            id: item.id.videoId,
-            title: item.snippet.title,
-            description: item.snippet.description,
-            thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
-            publishedAt: item.snippet.publishedAt,
-            channelTitle: item.snippet.channelTitle,
-            isLive: false
-          }));
-        }
-      }
+      console.log('No videos found on any platform, providing fallback content');
+      videos = await getFallbackVideos(query);
     }
 
     console.log(`Returning ${videos.length} videos for query: ${query}`);
@@ -123,9 +65,9 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in youtube-search function:', error);
+    console.error('Error in video search function:', error);
     return new Response(JSON.stringify({ 
-      error: 'Failed to search YouTube videos',
+      error: 'Failed to search for videos',
       details: error.message 
     }), {
       status: 500,
@@ -133,3 +75,173 @@ serve(async (req) => {
     });
   }
 });
+
+async function searchYouTubeVideos(query: string): Promise<Video[]> {
+  try {
+    const youtubeApiKey = Deno.env.get('YOUTUBE_API_KEY');
+    if (!youtubeApiKey) {
+      console.error('YouTube API key not configured');
+      return [];
+    }
+
+    // Search for live streams first
+    console.log('Searching YouTube for live streams:', query);
+    const liveSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&eventType=live&maxResults=3&key=${youtubeApiKey}`;
+    
+    const liveResponse = await fetch(liveSearchUrl);
+    const liveData = await liveResponse.json();
+    
+    if (liveData.error) {
+      console.error('YouTube API error:', liveData.error);
+      return [];
+    }
+    
+    let videos: Video[] = [];
+    
+    if (liveData.items && liveData.items.length > 0) {
+      console.log(`Found ${liveData.items.length} YouTube live streams`);
+      videos = liveData.items.map((item: any) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        description: item.snippet.description,
+        thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
+        publishedAt: item.snippet.publishedAt,
+        channelTitle: item.snippet.channelTitle,
+        isLive: true,
+        platform: 'youtube' as const,
+        embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?autoplay=0&rel=0`
+      }));
+    }
+    
+    // If no live streams, search for recent videos
+    if (videos.length === 0) {
+      console.log('No YouTube live streams found, searching for recent videos');
+      const recentSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&order=relevance&maxResults=3&publishedAfter=${new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()}&key=${youtubeApiKey}`;
+      
+      const recentResponse = await fetch(recentSearchUrl);
+      const recentData = await recentResponse.json();
+      
+      if (recentData.items && recentData.items.length > 0) {
+        console.log(`Found ${recentData.items.length} YouTube recent videos`);
+        videos = recentData.items.map((item: any) => ({
+          id: item.id.videoId,
+          title: item.snippet.title,
+          description: item.snippet.description,
+          thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
+          publishedAt: item.snippet.publishedAt,
+          channelTitle: item.snippet.channelTitle,
+          isLive: false,
+          platform: 'youtube' as const,
+          embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?autoplay=0&rel=0`
+        }));
+      } else {
+        // General search without date filter
+        console.log('No recent YouTube videos found, doing general search');
+        const generalSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&order=relevance&maxResults=3&key=${youtubeApiKey}`;
+        
+        const generalResponse = await fetch(generalSearchUrl);
+        const generalData = await generalResponse.json();
+        
+        if (generalData.items && generalData.items.length > 0) {
+          console.log(`Found ${generalData.items.length} YouTube general videos`);
+          videos = generalData.items.map((item: any) => ({
+            id: item.id.videoId,
+            title: item.snippet.title,
+            description: item.snippet.description,
+            thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
+            publishedAt: item.snippet.publishedAt,
+            channelTitle: item.snippet.channelTitle,
+            isLive: false,
+            platform: 'youtube' as const,
+            embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?autoplay=0&rel=0`
+          }));
+        }
+      }
+    }
+    
+    return videos;
+  } catch (error) {
+    console.error('YouTube search error:', error);
+    return [];
+  }
+}
+
+async function searchAlternativePlatforms(query: string): Promise<Video[]> {
+  const videos: Video[] = [];
+  
+  try {
+    // Try Vimeo search using their API
+    console.log('Searching Vimeo for:', query);
+    const vimeoResponse = await fetch(`https://api.vimeo.com/videos?query=${encodeURIComponent(query + ' museum')}&per_page=3&sort=relevant`, {
+      headers: {
+        'Authorization': 'Bearer ' + (Deno.env.get('VIMEO_ACCESS_TOKEN') || ''),
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (vimeoResponse.ok) {
+      const vimeoData = await vimeoResponse.json();
+      if (vimeoData.data && vimeoData.data.length > 0) {
+        console.log(`Found ${vimeoData.data.length} Vimeo videos`);
+        const vimeoVideos = vimeoData.data.map((item: any) => ({
+          id: item.uri.split('/').pop(),
+          title: item.name,
+          description: item.description || '',
+          thumbnail: item.pictures?.sizes?.[0]?.link || '',
+          publishedAt: item.created_time,
+          channelTitle: item.user?.name || 'Vimeo',
+          isLive: false,
+          platform: 'vimeo' as const,
+          embedUrl: `https://player.vimeo.com/video/${item.uri.split('/').pop()}`
+        }));
+        videos.push(...vimeoVideos);
+      }
+    }
+  } catch (error) {
+    console.error('Vimeo search error:', error);
+  }
+  
+  return videos;
+}
+
+async function getFallbackVideos(query: string): Promise<Video[]> {
+  // Provide curated fallback content for popular museums or general museum content
+  const fallbackVideos: Video[] = [
+    {
+      id: 'c1f45LzAciE',
+      title: 'Virtual Museum Tour - World\'s Greatest Museums',
+      description: 'Take a virtual tour of the world\'s most famous museums and their incredible collections.',
+      thumbnail: 'https://img.youtube.com/vi/c1f45LzAciE/maxresdefault.jpg',
+      publishedAt: new Date().toISOString(),
+      channelTitle: 'Museum Tours',
+      isLive: false,
+      platform: 'fallback' as const,
+      embedUrl: 'https://www.youtube.com/embed/c1f45LzAciE?autoplay=0&rel=0'
+    },
+    {
+      id: 'YuR0VGKJ0iY',
+      title: 'The Louvre Museum Virtual Tour',
+      description: 'Explore the famous Louvre Museum in Paris with this virtual tour.',
+      thumbnail: 'https://img.youtube.com/vi/YuR0VGKJ0iY/maxresdefault.jpg',
+      publishedAt: new Date().toISOString(),
+      channelTitle: 'Art History',
+      isLive: false,
+      platform: 'fallback' as const,
+      embedUrl: 'https://www.youtube.com/embed/YuR0VGKJ0iY?autoplay=0&rel=0'
+    },
+    {
+      id: 'ziw7NZyP0AE',
+      title: 'Museum of Natural History Tour',
+      description: 'Discover the wonders of natural history in this comprehensive museum tour.',
+      thumbnail: 'https://img.youtube.com/vi/ziw7NZyP0AE/maxresdefault.jpg',
+      publishedAt: new Date().toISOString(),
+      channelTitle: 'Science Museums',
+      isLive: false,
+      platform: 'fallback' as const,
+      embedUrl: 'https://www.youtube.com/embed/ziw7NZyP0AE?autoplay=0&rel=0'
+    }
+  ];
+  
+  console.log(`Providing ${fallbackVideos.length} fallback videos for query: ${query}`);
+  return fallbackVideos;
+}

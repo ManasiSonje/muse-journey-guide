@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Calendar, User, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface YouTubeVideo {
+interface Video {
   id: string;
   title: string;
   description: string;
@@ -12,17 +12,19 @@ interface YouTubeVideo {
   publishedAt: string;
   channelTitle: string;
   isLive?: boolean;
+  platform: 'youtube' | 'vimeo' | 'dailymotion' | 'fallback';
+  embedUrl: string;
 }
 
-interface YouTubeVideoEmbedProps {
-  videos: YouTubeVideo[];
+interface VideoEmbedProps {
+  videos: Video[];
   query: string;
   loading: boolean;
   error?: string;
 }
 
-const YouTubeVideoEmbed = ({ videos, query, loading, error }: YouTubeVideoEmbedProps) => {
-  const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
+const YouTubeVideoEmbed = ({ videos, query, loading, error }: VideoEmbedProps) => {
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
 
   if (loading) {
     return (
@@ -99,7 +101,7 @@ const YouTubeVideoEmbed = ({ videos, query, loading, error }: YouTubeVideoEmbedP
             <iframe
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${mainVideo.id}?autoplay=0&rel=0`}
+              src={mainVideo.embedUrl}
               title={mainVideo.title}
               frameBorder="0"
               allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -132,6 +134,13 @@ const YouTubeVideoEmbed = ({ videos, query, loading, error }: YouTubeVideoEmbedP
                 <Calendar className="w-3 h-3" />
                 <span>{new Date(mainVideo.publishedAt).toLocaleDateString()}</span>
               </div>
+              {mainVideo.platform !== 'youtube' && (
+                <div className="flex items-center space-x-1">
+                  <span className="text-xs bg-accent/30 px-2 py-0.5 rounded capitalize">
+                    {mainVideo.platform === 'fallback' ? 'curated' : mainVideo.platform}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
