@@ -140,21 +140,56 @@ const Chatbot = () => {
       });
       
       if (error) {
-        throw error;
+        console.error('YouTube API Error:', error);
+        setVideoError('Unable to load video right now. Please try again later.');
+        setYoutubeVideos([]);
+        return;
       }
       
-      if (data.hasResults) {
+      if (data && data.hasResults && data.videos.length > 0) {
         setYoutubeVideos(data.videos);
+        setVideoError(null);
       } else {
-        setYoutubeVideos([]);
-        setVideoError('No video found, please try another museum.');
+        // Try fallback search with more general terms
+        await searchFallbackVideos(museumName);
       }
     } catch (error) {
       console.error('Error searching YouTube videos:', error);
-      setVideoError('Failed to search for videos. Please try again.');
+      setVideoError('Unable to load video right now. Please try again later.');
       setYoutubeVideos([]);
     } finally {
       setVideoLoading(false);
+    }
+  };
+
+  const searchFallbackVideos = async (originalQuery: string) => {
+    try {
+      // Try searching for general museum content if specific museum has no videos
+      const fallbackQueries = [
+        `${originalQuery.split(' ')[0]} museum tour`, // First word + museum tour
+        'museum virtual tour',
+        'famous museums documentary'
+      ];
+
+      for (const fallbackQuery of fallbackQueries) {
+        const { data, error } = await supabase.functions.invoke('youtube-search', {
+          body: { query: fallbackQuery }
+        });
+        
+        if (!error && data && data.hasResults && data.videos.length > 0) {
+          setYoutubeVideos(data.videos);
+          setVideoError(`No videos found for "${originalQuery}". Showing related museum content instead.`);
+          return;
+        }
+      }
+      
+      // If all fallbacks fail
+      setYoutubeVideos([]);
+      setVideoError('No video available for this museum, please try another search.');
+    } catch (error) {
+      console.error('Fallback search failed:', error);
+      setYoutubeVideos([]);
+      setVideoError('No video available for this museum, please try another search.');
     }
   };
 

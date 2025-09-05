@@ -39,12 +39,34 @@ const YouTubeVideoEmbed = ({ videos, query, loading, error }: YouTubeVideoEmbedP
   }
 
   if (error) {
+    const isConnectionError = error.includes('Unable to load video right now');
+    const isNoResults = error.includes('No video available for this museum');
+    const isFallbackContent = error.includes('Showing related museum content instead');
+    
     return (
       <Card className="glass border-border/20 p-4">
-        <div className="flex items-center justify-center h-32 text-muted-foreground">
-          <div className="text-center space-y-2">
-            <AlertCircle className="w-8 h-8 mx-auto opacity-60" />
-            <p className="text-sm">{error}</p>
+        <div className="flex items-center justify-center min-h-[120px] text-muted-foreground">
+          <div className="text-center space-y-3 max-w-sm">
+            <AlertCircle className={`w-8 h-8 mx-auto ${isConnectionError ? 'text-amber-400' : 'opacity-60'}`} />
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{error}</p>
+              {isConnectionError && (
+                <p className="text-xs opacity-80">Check your internet connection and try again.</p>
+              )}
+              {isNoResults && (
+                <div className="space-y-2">
+                  <p className="text-xs opacity-80">Try searching for:</p>
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    <span className="text-xs bg-muted/30 px-2 py-1 rounded">Louvre</span>
+                    <span className="text-xs bg-muted/30 px-2 py-1 rounded">MoMA</span>
+                    <span className="text-xs bg-muted/30 px-2 py-1 rounded">British Museum</span>
+                  </div>
+                </div>
+              )}
+              {isFallbackContent && videos && videos.length > 0 && (
+                <p className="text-xs opacity-80 text-golden">⬇️ Related content below</p>
+              )}
+            </div>
           </div>
         </div>
       </Card>
