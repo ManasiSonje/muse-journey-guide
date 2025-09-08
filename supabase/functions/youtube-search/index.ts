@@ -84,82 +84,35 @@ async function searchYouTubeVideos(query: string): Promise<Video[]> {
       return [];
     }
 
-    // Search for live streams first
-    console.log('Searching YouTube for live streams:', query);
-    const liveSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&eventType=live&maxResults=3&key=${youtubeApiKey}`;
+    console.log('Searching YouTube for:', query);
+    // Use the exact format specified by the user
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(query)}&key=${youtubeApiKey}`;
     
-    const liveResponse = await fetch(liveSearchUrl);
-    const liveData = await liveResponse.json();
+    const response = await fetch(searchUrl);
+    const data = await response.json();
     
-    if (liveData.error) {
-      console.error('YouTube API error:', liveData.error);
+    if (data.error) {
+      console.error('YouTube API error:', data.error);
       return [];
     }
     
-    let videos: Video[] = [];
-    
-    if (liveData.items && liveData.items.length > 0) {
-      console.log(`Found ${liveData.items.length} YouTube live streams`);
-      videos = liveData.items.map((item: any) => ({
+    if (data.items && data.items.length > 0) {
+      console.log(`Found ${data.items.length} YouTube videos`);
+      const videos = data.items.map((item: any) => ({
         id: item.id.videoId,
         title: item.snippet.title,
         description: item.snippet.description,
         thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
         publishedAt: item.snippet.publishedAt,
         channelTitle: item.snippet.channelTitle,
-        isLive: true,
+        isLive: false,
         platform: 'youtube' as const,
         embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?autoplay=0&rel=0`
       }));
+      return videos;
     }
     
-    // If no live streams, search for recent videos
-    if (videos.length === 0) {
-      console.log('No YouTube live streams found, searching for recent videos');
-      const recentSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&order=relevance&maxResults=3&publishedAfter=${new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()}&key=${youtubeApiKey}`;
-      
-      const recentResponse = await fetch(recentSearchUrl);
-      const recentData = await recentResponse.json();
-      
-      if (recentData.items && recentData.items.length > 0) {
-        console.log(`Found ${recentData.items.length} YouTube recent videos`);
-        videos = recentData.items.map((item: any) => ({
-          id: item.id.videoId,
-          title: item.snippet.title,
-          description: item.snippet.description,
-          thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
-          publishedAt: item.snippet.publishedAt,
-          channelTitle: item.snippet.channelTitle,
-          isLive: false,
-          platform: 'youtube' as const,
-          embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?autoplay=0&rel=0`
-        }));
-      } else {
-        // General search without date filter
-        console.log('No recent YouTube videos found, doing general search');
-        const generalSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query + ' museum')}&type=video&order=relevance&maxResults=3&key=${youtubeApiKey}`;
-        
-        const generalResponse = await fetch(generalSearchUrl);
-        const generalData = await generalResponse.json();
-        
-        if (generalData.items && generalData.items.length > 0) {
-          console.log(`Found ${generalData.items.length} YouTube general videos`);
-          videos = generalData.items.map((item: any) => ({
-            id: item.id.videoId,
-            title: item.snippet.title,
-            description: item.snippet.description,
-            thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url,
-            publishedAt: item.snippet.publishedAt,
-            channelTitle: item.snippet.channelTitle,
-            isLive: false,
-            platform: 'youtube' as const,
-            embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?autoplay=0&rel=0`
-          }));
-        }
-      }
-    }
-    
-    return videos;
+    return [];
   } catch (error) {
     console.error('YouTube search error:', error);
     return [];
