@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YouTubeVideoEmbed from '@/components/YouTubeVideoEmbed';
+import { useMuseumData } from '@/hooks/useMuseumData';
 import chatbotAvatar from '@/assets/chatbot-avatar.png';
 
 interface Message {
@@ -32,6 +33,7 @@ interface Video {
 
 const Chatbot = () => {
   const { user, loading } = useAuth();
+  const { getMuseumByName, generateMuseumResponse } = useMuseumData();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -63,10 +65,35 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
-  const simulateBotResponse = (userMessage: string) => {
+  const simulateBotResponse = async (userMessage: string) => {
     setIsTyping(true);
     
-    setTimeout(() => {
+    try {
+      // Check if user is asking about a specific museum
+      const museumKeywords = ['national museum', 'red fort', 'india gate', 'victoria memorial', 'albert hall'];
+      const foundMuseum = museumKeywords.find(keyword => 
+        userMessage.toLowerCase().includes(keyword)
+      );
+
+      if (foundMuseum) {
+        const museum = await getMuseumByName(foundMuseum);
+        if (museum) {
+          const response = generateMuseumResponse(museum, userMessage);
+          
+          const botMessage: Message = {
+            id: Date.now().toString(),
+            content: response,
+            sender: 'bot',
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, botMessage]);
+          setIsTyping(false);
+          return;
+        }
+      }
+
+      // Fallback responses for general queries
       const responses = [
         "I'd love to help you with that! Can you tell me which city you're interested in visiting?",
         "That's a great choice! Let me find some amazing museums for you. How many tickets do you need?",
@@ -85,8 +112,18 @@ const Chatbot = () => {
       };
       
       setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error generating bot response:', error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "I'm sorry, I encountered an issue. Please try asking about museum timings, reviews, or ticket prices!",
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleSendMessage = () => {

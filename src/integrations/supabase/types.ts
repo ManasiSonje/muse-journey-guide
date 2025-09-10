@@ -17,14 +17,18 @@ export type Database = {
       museums: {
         Row: {
           address: string | null
+          booking_link: string | null
           city: string | null
           contact: string | null
           created_at: string
           description: string | null
+          detailed_timings: Json | null
           entry_fee: string | null
           established: string | null
           id: number
           name: string
+          pricing: Json | null
+          reviews: Json | null
           timings: string | null
           type: string | null
           updated_at: string
@@ -32,14 +36,18 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          booking_link?: string | null
           city?: string | null
           contact?: string | null
           created_at?: string
           description?: string | null
+          detailed_timings?: Json | null
           entry_fee?: string | null
           established?: string | null
           id: number
           name: string
+          pricing?: Json | null
+          reviews?: Json | null
           timings?: string | null
           type?: string | null
           updated_at?: string
@@ -47,14 +55,18 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          booking_link?: string | null
           city?: string | null
           contact?: string | null
           created_at?: string
           description?: string | null
+          detailed_timings?: Json | null
           entry_fee?: string | null
           established?: string | null
           id?: number
           name?: string
+          pricing?: Json | null
+          reviews?: Json | null
           timings?: string | null
           type?: string | null
           updated_at?: string
@@ -114,14 +126,18 @@ export type Database = {
         }
         Returns: {
           address: string | null
+          booking_link: string | null
           city: string | null
           contact: string | null
           created_at: string
           description: string | null
+          detailed_timings: Json | null
           entry_fee: string | null
           established: string | null
           id: number
           name: string
+          pricing: Json | null
+          reviews: Json | null
           timings: string | null
           type: string | null
           updated_at: string

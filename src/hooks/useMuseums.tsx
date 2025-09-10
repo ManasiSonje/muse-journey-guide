@@ -1,6 +1,27 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface Review {
+  user: string;
+  rating: number;
+  comment: string;
+}
+
+export interface DetailedTimings {
+  monday: string;
+  tuesday: string;
+  wednesday: string;
+  thursday: string;
+  friday: string;
+  saturday: string;
+  sunday: string;
+}
+
+export interface Pricing {
+  adult: string;
+  child: string;
+}
+
 export interface Museum {
   id: number;
   name: string;
@@ -15,6 +36,10 @@ export interface Museum {
   website?: string | null;
   created_at?: string;
   updated_at?: string;
+  detailed_timings?: any; // JSON data from database
+  reviews?: any; // JSON data from database
+  pricing?: any; // JSON data from database
+  booking_link?: string;
 }
 
 export const useMuseums = () => {
