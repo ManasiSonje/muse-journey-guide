@@ -48,10 +48,10 @@ export const useMuseumData = () => {
     try {
       const { data, error } = await supabase
         .from('museums')
-        .select('*')
+        .select('*, detailed_timings, reviews, pricing, booking_link')
         .ilike('name', `%${museumName}%`)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching museum:', error);

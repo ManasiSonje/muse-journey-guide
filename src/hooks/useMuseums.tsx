@@ -56,7 +56,7 @@ export const useMuseums = () => {
       try {
         const { data, error } = await supabase
           .from('museums')
-          .select('*')
+          .select('*, detailed_timings, reviews, pricing, booking_link')
           .order('name');
 
         if (error) {
