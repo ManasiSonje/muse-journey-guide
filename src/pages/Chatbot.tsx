@@ -69,44 +69,29 @@ const Chatbot = () => {
     setIsTyping(true);
     
     try {
-      // Check if user is asking about a specific museum
-      const museumKeywords = ['national museum', 'red fort', 'india gate', 'victoria memorial', 'albert hall'];
-      const foundMuseum = museumKeywords.find(keyword => 
-        userMessage.toLowerCase().includes(keyword)
-      );
-
-      if (foundMuseum) {
-        const museum = await getMuseumByName(foundMuseum);
-        if (museum) {
-          const response = generateMuseumResponse(museum, userMessage);
-          
-          const botMessage: Message = {
-            id: Date.now().toString(),
-            content: response,
-            sender: 'bot',
-            timestamp: new Date()
-          };
-          
-          setMessages(prev => [...prev, botMessage]);
-          setIsTyping(false);
-          return;
-        }
+      // First, try to search the database for relevant museums
+      const databaseResponse = await searchDatabaseForAnswer(userMessage);
+      
+      if (databaseResponse) {
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          content: databaseResponse,
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+        setIsTyping(false);
+        return;
       }
 
-      // Fallback responses for general queries
-      const responses = [
-        "I'd love to help you with that! Can you tell me which city you're interested in visiting?",
-        "That's a great choice! Let me find some amazing museums for you. How many tickets do you need?",
-        "Perfect! I can help you book tickets. What date were you thinking of visiting?",
-        "Excellent! I'll generate a personalized itinerary for you. What are your main interests - art, history, science, or culture?",
-        "Great question! The museum has fascinating exhibits. Would you like me to show you their virtual tour or book tickets directly?"
-      ];
-      
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      // If no database results, perform web search
+      console.log('No database results found, performing web search...');
+      const webSearchResponse = await performWebSearch(userMessage);
       
       const botMessage: Message = {
         id: Date.now().toString(),
-        content: randomResponse,
+        content: webSearchResponse,
         sender: 'bot',
         timestamp: new Date()
       };
@@ -116,13 +101,83 @@ const Chatbot = () => {
       console.error('Error generating bot response:', error);
       const errorMessage: Message = {
         id: Date.now().toString(),
-        content: "I'm sorry, I encountered an issue. Please try asking about museum timings, reviews, or ticket prices!",
+        content: "I'm sorry, I encountered an issue while searching for information. Please try rephrasing your question!",
         sender: 'bot',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const searchDatabaseForAnswer = async (query: string): Promise<string | null> => {
+    try {
+      // Check for specific museum mentions first
+      const museumKeywords = ['museum', 'gallery', 'exhibition', 'art', 'history', 'culture'];
+      const hasMuseumContext = museumKeywords.some(keyword => 
+        query.toLowerCase().includes(keyword)
+      );
+
+      if (hasMuseumContext) {
+        // Try to find a specific museum by name
+        const museum = await getMuseumByName(query);
+        if (museum) {
+          return generateMuseumResponse(museum, query);
+        }
+
+        // If no specific museum found, search all museums for relevant information
+        const { data: museums } = await supabase
+          .from('museums')
+          .select('*')
+          .or(`name.ilike.%${query}%,description.ilike.%${query}%,city.ilike.%${query}%,type.ilike.%${query}%`)
+          .limit(3);
+
+        if (museums && museums.length > 0) {
+          const museumList = museums.map(museum => 
+            `**${museum.name}** (${museum.city}) - ${museum.description?.substring(0, 100)}...`
+          ).join('\n\n');
+          
+          return `I found some museums related to your query:\n\n${museumList}\n\nWould you like to know more about any specific museum, including timings, ticket prices, or reviews?`;
+        }
+      }
+
+      // Check for general queries about museum services
+      const serviceKeywords = {
+        'booking': 'You can book museum tickets through our platform! I can help you find museums and their booking links.',
+        'timing': 'Most museums are open from 10 AM to 6 PM, but timings vary. Which specific museum are you interested in?',
+        'price': 'Museum ticket prices vary by location and type. Which museum would you like pricing information for?',
+        'review': 'I can show you visitor reviews for any museum! Which one interests you?'
+      };
+
+      for (const [keyword, response] of Object.entries(serviceKeywords)) {
+        if (query.toLowerCase().includes(keyword)) {
+          return response;
+        }
+      }
+
+      return null; // No database match found
+    } catch (error) {
+      console.error('Error searching database:', error);
+      return null;
+    }
+  };
+
+  const performWebSearch = async (query: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('web-search', {
+        body: { query }
+      });
+
+      if (error) {
+        console.error('Web search error:', error);
+        throw error;
+      }
+
+      return data.answer || "I couldn't find specific information about that. Could you try rephrasing your question?";
+    } catch (error) {
+      console.error('Error performing web search:', error);
+      return "I'm having trouble searching for that information right now. Please try asking about museum timings, reviews, or ticket prices, or try again later.";
     }
   };
 
