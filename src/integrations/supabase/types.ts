@@ -44,7 +44,7 @@ export type Database = {
           detailed_timings?: Json | null
           entry_fee?: string | null
           established?: string | null
-          id: number
+          id?: number
           name: string
           pricing?: Json | null
           reviews?: Json | null
