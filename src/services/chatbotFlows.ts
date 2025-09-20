@@ -3,11 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ConversationState {
   currentFlow: 'menu' | 'booking' | 'details' | 'timeslots' | 'suggest' | null;
   awaitingInput: string | null;
+  currentMessage: string;
+  inputPlaceholder?: string;
+  showInput: boolean;
+  showButtons: boolean;
 }
 
 export interface FlowResponse {
   message: string;
   nextState: ConversationState;
+  redirectUrl?: string;
+}
+
+export interface ChatbotOption {
+  id: string;
+  label: string;
+  icon: string;
 }
 
 export class ChatbotFlowService {
@@ -31,61 +42,95 @@ export class ChatbotFlowService {
     return museums || [];
   }
 
-  getInitialMessage(): FlowResponse {
+  getInitialState(): ConversationState {
     return {
-      message: `Welcome! I'm your Museum Assistant. I can help you with:
-
-🎫 **Museum Booking** - Get booking links for museums
-🏛️ **View Museum Details** - See detailed information about museums  
-⏰ **Check Available Time Slots** - View museum opening hours and availability
-🗺️ **Suggest Museums** - Find museums in your preferred city
-
-Just type what you'd like to do, or ask me anything about museums!`,
-      nextState: { currentFlow: 'menu', awaitingInput: null }
+      currentFlow: 'menu',
+      awaitingInput: null,
+      currentMessage: "Hi! I'm MuseMate, your personal museum assistant. How can I help you today?",
+      showInput: false,
+      showButtons: true
     };
   }
 
+  getMenuOptions(): ChatbotOption[] {
+    return [
+      { id: 'booking', label: 'Museum Booking', icon: '🎫' },
+      { id: 'details', label: 'View Museum Details', icon: '🏛️' },
+      { id: 'timeslots', label: 'Check Available Time Slots', icon: '⏰' },
+      { id: 'suggest', label: 'Suggest Museums', icon: '🗺️' }
+    ];
+  }
+
+  handleOptionSelect(optionId: string): FlowResponse {
+    switch (optionId) {
+      case 'booking':
+        return {
+          message: "Great! Which museum would you like to book?",
+          nextState: {
+            currentFlow: 'booking',
+            awaitingInput: 'museum_name',
+            currentMessage: "Great! Which museum would you like to book?",
+            inputPlaceholder: "Enter museum name...",
+            showInput: true,
+            showButtons: false
+          }
+        };
+
+      case 'details':
+        return {
+          message: "Which museum details would you like to see?",
+          nextState: {
+            currentFlow: 'details',
+            awaitingInput: 'museum_name',
+            currentMessage: "Which museum details would you like to see?",
+            inputPlaceholder: "Enter museum name...",
+            showInput: true,
+            showButtons: false
+          }
+        };
+
+      case 'timeslots':
+        return {
+          message: "Please provide the museum name to check available time slots.",
+          nextState: {
+            currentFlow: 'timeslots',
+            awaitingInput: 'museum_name',
+            currentMessage: "Please provide the museum name to check available time slots.",
+            inputPlaceholder: "Enter museum name...",
+            showInput: true,
+            showButtons: false
+          }
+        };
+
+      case 'suggest':
+        return {
+          message: "Please enter the city name where you want to visit a museum.",
+          nextState: {
+            currentFlow: 'suggest',
+            awaitingInput: 'city_name',
+            currentMessage: "Please enter the city name where you want to visit a museum.",
+            inputPlaceholder: "Enter city name...",
+            showInput: true,
+            showButtons: false
+          }
+        };
+
+      default:
+        return {
+          message: "I'm not sure what you're looking for. Please select one of the options below:",
+          nextState: this.getInitialState()
+        };
+    }
+  }
+
   async processUserInput(input: string, currentState: ConversationState): Promise<FlowResponse> {
-    const lowerInput = input.toLowerCase();
-
-    // Check for main menu options
-    if (lowerInput.includes('booking') || lowerInput.includes('book')) {
-      return {
-        message: "Great! Which museum would you like to book? Please provide the museum name.",
-        nextState: { currentFlow: 'booking', awaitingInput: 'museum_name' }
-      };
-    }
-
-    if (lowerInput.includes('details') || lowerInput.includes('information') || lowerInput.includes('about')) {
-      return {
-        message: "I'd be happy to show you museum details! Which museum would you like to know more about?",
-        nextState: { currentFlow: 'details', awaitingInput: 'museum_name' }
-      };
-    }
-
-    if (lowerInput.includes('time') || lowerInput.includes('slot') || lowerInput.includes('hours') || lowerInput.includes('timing')) {
-      return {
-        message: "I can help you check available time slots! Please provide the museum name.",
-        nextState: { currentFlow: 'timeslots', awaitingInput: 'museum_name' }
-      };
-    }
-
-    if (lowerInput.includes('suggest') || lowerInput.includes('recommend') || lowerInput.includes('find')) {
-      return {
-        message: "I'd love to suggest museums for you! Please enter the city name where you want to visit a museum.",
-        nextState: { currentFlow: 'suggest', awaitingInput: 'city_name' }
-      };
-    }
-
-    // Handle flow-specific responses
     if (currentState.currentFlow && currentState.awaitingInput) {
       return await this.handleFlowResponse(input, currentState);
     }
 
-    // Fallback - return null to indicate no structured flow matched
     return {
-      message: "",
-      nextState: { currentFlow: null, awaitingInput: null }
+      message: "Please select one of the options below:",
+      nextState: this.getInitialState()
     };
   }
 
@@ -105,10 +150,14 @@ Just type what you'd like to do, or ask me anything about museums!`,
       
       default:
         return {
-          message: "I'm not sure what you're looking for. Let me help you with our main options!",
-          nextState: { currentFlow: 'menu', awaitingInput: null }
+          message: "I'm not sure what you're looking for. Please select one of the options below:",
+          nextState: this.getInitialState()
         };
     }
+  }
+
+  resetToMenu(): ConversationState {
+    return this.getInitialState();
   }
 
   private async handleBookingFlow(museumName: string): Promise<FlowResponse> {
@@ -116,35 +165,29 @@ Just type what you'd like to do, or ask me anything about museums!`,
     
     if (!museum) {
       return {
-        message: `Sorry, I couldn't find "${museumName}" in our database. Could you please check the spelling or try another museum name?
-
-You can also ask me to suggest museums in a specific city!`,
-        nextState: { currentFlow: 'booking', awaitingInput: 'museum_name' }
+        message: `Sorry, I couldn't find "${museumName}". Please try again.`,
+        nextState: {
+          currentFlow: 'booking',
+          awaitingInput: 'museum_name',
+          currentMessage: `Sorry, I couldn't find "${museumName}". Please try again.`,
+          inputPlaceholder: "Enter museum name...",
+          showInput: true,
+          showButtons: false
+        }
       };
     }
 
     if (museum.booking_link) {
+      // Direct redirect for booking
       return {
-        message: `Perfect! Here's the booking information for **${museum.name}**:
-
-🎫 **Booking Link**: ${museum.booking_link}
-
-📍 **Location**: ${museum.address || museum.city}
-💰 **Entry Fee**: ${museum.entry_fee || 'Contact museum for pricing'}
-
-Is there anything else I can help you with?`,
-        nextState: { currentFlow: 'menu', awaitingInput: null }
+        message: `Redirecting you to book ${museum.name}...`,
+        nextState: this.getInitialState(),
+        redirectUrl: museum.booking_link
       };
     } else {
       return {
-        message: `I found **${museum.name}** but don't have a direct booking link available. Here's how you can book:
-
-📞 **Contact**: ${museum.contact || 'Contact information not available'}
-🌐 **Website**: ${museum.website || 'Website not available'}
-📍 **Address**: ${museum.address || museum.city}
-
-You can contact them directly for booking. Is there anything else I can help you with?`,
-        nextState: { currentFlow: 'menu', awaitingInput: null }
+        message: `${museum.name} found, but no direct booking available. Please contact them at: ${museum.contact || 'Contact information not available'}`,
+        nextState: this.getInitialState()
       };
     }
   }
@@ -154,42 +197,33 @@ You can contact them directly for booking. Is there anything else I can help you
     
     if (!museum) {
       return {
-        message: `Sorry, I couldn't find "${museumName}" in our database. Would you like to try again with a different museum name?
-
-You can also ask me to suggest museums in a specific city!`,
-        nextState: { currentFlow: 'details', awaitingInput: 'museum_name' }
+        message: `Sorry, I couldn't find "${museumName}". Please try again.`,
+        nextState: {
+          currentFlow: 'details',
+          awaitingInput: 'museum_name',
+          currentMessage: `Sorry, I couldn't find "${museumName}". Please try again.`,
+          inputPlaceholder: "Enter museum name...",
+          showInput: true,
+          showButtons: false
+        }
       };
     }
 
-    let details = `Here are the details for **${museum.name}**:
+    let details = `**${museum.name}**
 
-📍 **Location**: ${museum.city}
-🏛️ **Type**: ${museum.type || 'General Museum'}
-📅 **Established**: ${museum.established || 'Information not available'}
+📍 ${museum.city} | 🏛️ ${museum.type || 'Museum'}
+⏰ ${museum.timings || 'Contact for timings'}
+💰 ${museum.entry_fee || 'Contact for pricing'}
 
-📖 **Description**: ${museum.description || 'Description not available'}
+${museum.description || 'No description available'}`;
 
-📍 **Address**: ${museum.address || 'Address not available'}
-⏰ **Timings**: ${museum.timings || 'Contact museum for timings'}
-💰 **Entry Fee**: ${museum.entry_fee || 'Contact museum for pricing'}
-📞 **Contact**: ${museum.contact || 'Contact information not available'}`;
-
-    if (museum.website) {
-      details += `\n🌐 **Website**: ${museum.website}`;
+    if (museum.contact) {
+      details += `\n\n📞 ${museum.contact}`;
     }
-
-    if (museum.reviews && Array.isArray(museum.reviews) && museum.reviews.length > 0) {
-      details += `\n\n⭐ **Recent Reviews**:`;
-      museum.reviews.slice(0, 2).forEach((review: any) => {
-        details += `\n• ${review.comment} - ${review.rating}/5 stars`;
-      });
-    }
-
-    details += `\n\nWould you like to book this museum or need any other information?`;
 
     return {
       message: details,
-      nextState: { currentFlow: 'menu', awaitingInput: null }
+      nextState: this.getInitialState()
     };
   }
 
@@ -198,39 +232,38 @@ You can also ask me to suggest museums in a specific city!`,
     
     if (!museum) {
       return {
-        message: `Sorry, I couldn't find "${museumName}" in our database. Please check the spelling or try another museum name.
-
-Would you like me to suggest museums in a specific city?`,
-        nextState: { currentFlow: 'timeslots', awaitingInput: 'museum_name' }
+        message: `Sorry, I couldn't find "${museumName}". Please try again.`,
+        nextState: {
+          currentFlow: 'timeslots',
+          awaitingInput: 'museum_name',
+          currentMessage: `Sorry, I couldn't find "${museumName}". Please try again.`,
+          inputPlaceholder: "Enter museum name...",
+          showInput: true,
+          showButtons: false
+        }
       };
     }
 
-    let timingInfo = `Here are the available time slots for **${museum.name}**:
+    let timingInfo = `**${museum.name}** - Available Time Slots
 
-⏰ **General Timings**: ${museum.timings || 'Contact museum for current timings'}`;
+⏰ ${museum.timings || 'Contact museum for current timings'}`;
 
     if (museum.detailed_timings) {
       const detailedTimings = museum.detailed_timings as any;
-      timingInfo += `\n\n📅 **Detailed Schedule**:`;
+      timingInfo += `\n\n📅 Detailed Schedule:`;
       
       Object.entries(detailedTimings).forEach(([day, timing]) => {
-        timingInfo += `\n• **${day}**: ${timing}`;
+        timingInfo += `\n• ${day}: ${timing}`;
       });
     }
 
-    timingInfo += `\n\n📞 **Contact**: ${museum.contact || 'Contact information not available'}`;
-    
-    if (museum.booking_link) {
-      timingInfo += `\n🎫 **Book Now**: ${museum.booking_link}`;
+    if (museum.contact) {
+      timingInfo += `\n\n📞 Contact: ${museum.contact}`;
     }
-
-    timingInfo += `\n\n💡 **Tip**: Call ahead to confirm current timings and availability!
-
-Is there anything else I can help you with?`;
 
     return {
       message: timingInfo,
-      nextState: { currentFlow: 'menu', awaitingInput: null }
+      nextState: this.getInitialState()
     };
   }
 
@@ -239,38 +272,29 @@ Is there anything else I can help you with?`;
     
     if (museums.length === 0) {
       return {
-        message: `Sorry, I couldn't find any museums in "${cityName}" in our database. 
-
-Please check the spelling or try another city name. You can also ask me about specific museums you have in mind!`,
-        nextState: { currentFlow: 'suggest', awaitingInput: 'city_name' }
+        message: `Sorry, I couldn't find any museums in "${cityName}". Please try again.`,
+        nextState: {
+          currentFlow: 'suggest',
+          awaitingInput: 'city_name',
+          currentMessage: `Sorry, I couldn't find any museums in "${cityName}". Please try again.`,
+          inputPlaceholder: "Enter city name...",
+          showInput: true,
+          showButtons: false
+        }
       };
     }
 
-    let suggestions = `Great! Here are the museums I found in **${cityName}**:\n\n`;
+    let suggestions = `Museums in **${cityName}**:\n\n`;
     
     museums.forEach((museum, index) => {
       suggestions += `${index + 1}. **${museum.name}**
-   📍 ${museum.address || museum.city}
-   🏛️ ${museum.type || 'General Museum'}
-   💰 ${museum.entry_fee || 'Contact for pricing'}`;
-   
-      if (museum.description) {
-        suggestions += `\n   📖 ${museum.description.substring(0, 100)}${museum.description.length > 100 ? '...' : ''}`;
-      }
-      
-      suggestions += `\n\n`;
+📍 ${museum.address || museum.city}
+💰 ${museum.entry_fee || 'Contact for pricing'}\n\n`;
     });
-
-    suggestions += `Would you like to:
-• See detailed information about any of these museums?
-• Check booking options for a specific museum?
-• Get time slots for any museum?
-
-Just let me know which museum interests you!`;
 
     return {
       message: suggestions,
-      nextState: { currentFlow: 'menu', awaitingInput: null }
+      nextState: this.getInitialState()
     };
   }
 }
