@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import YouTubeVideoEmbed from '@/components/YouTubeVideoEmbed';
 import { useMuseumData } from '@/hooks/useMuseumData';
 import chatbotAvatar from '@/assets/chatbot-avatar.png';
+import { ChatbotFlowService, ConversationState } from '@/services/chatbotFlows';
 
 interface Message {
   id: string;
@@ -34,10 +35,15 @@ interface Video {
 const Chatbot = () => {
   const { user, loading } = useAuth();
   const { getMuseumByName, generateMuseumResponse } = useMuseumData();
+  const [flowService] = useState(() => new ChatbotFlowService());
+  const [conversationState, setConversationState] = useState<ConversationState>({ 
+    currentFlow: 'menu', 
+    awaitingInput: null 
+  });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hi there! I'm MuseMate, your personal museum booking assistant. I can help you find museums, book tickets, and plan your cultural journey. What would you like to explore today?",
+      content: "Hi there! I'm MuseMate, your personal museum booking assistant. I can help you with:\n\n🎫 **Museum Booking** - Get booking links for museums\n🏛️ **View Museum Details** - See detailed information about museums\n⏰ **Check Available Time Slots** - View museum opening hours and availability\n🗺️ **Suggest Museums** - Find museums in your preferred city\n\nJust type what you'd like to do, or ask me anything about museums!",
       sender: 'bot',
       timestamp: new Date()
     }
@@ -69,7 +75,26 @@ const Chatbot = () => {
     setIsTyping(true);
     
     try {
-      // First, try to search the database for relevant museums
+      // First, try to process with structured conversation flows
+      const flowResponse = await flowService.processUserInput(userMessage, conversationState);
+      
+      if (flowResponse.message) {
+        // Update conversation state
+        setConversationState(flowResponse.nextState);
+        
+        const botMessage: Message = {
+          id: Date.now().toString(),
+          content: flowResponse.message,
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+        setIsTyping(false);
+        return;
+      }
+
+      // If no structured flow matched, try database search
       const databaseResponse = await searchDatabaseForAnswer(userMessage);
       
       if (databaseResponse) {
