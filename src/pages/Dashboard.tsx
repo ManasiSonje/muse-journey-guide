@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Sparkles } from 'lucide-react';
+import { Search, Bot, Compass, Calendar, ArrowRight, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
@@ -118,15 +118,6 @@ const Dashboard = () => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
               </div>
-              
-              {/* Floating Elements */}
-              <motion.div
-                animate={{ y: [-10, 10, -10] }}
-                transition={{ duration: 4, repeat: Infinity }}
-                className="absolute -top-4 -right-4 glass-strong rounded-2xl p-4 border border-golden/20"
-              >
-                <Sparkles className="w-8 h-8 text-golden" />
-              </motion.div>
             </motion.div>
           </div>
         </div>
@@ -283,7 +274,6 @@ const Dashboard = () => {
                       <span>Set your preferred dates and time</span>
                     </div>
                     <div className="flex items-center space-x-3 text-muted-foreground">
-                      <Sparkles className="w-5 h-5 text-accent" />
                       <span>Select your interests and preferences</span>
                     </div>
                   </div>
