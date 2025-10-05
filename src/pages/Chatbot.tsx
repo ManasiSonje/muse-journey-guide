@@ -306,7 +306,28 @@ const Chatbot = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-golden/20 border border-golden/30 p-6 rounded-2xl glow-golden"
                       >
-                        <p className="text-foreground">{conversationState.currentMessage}</p>
+                        <div className="text-foreground whitespace-pre-line text-left">
+                          {conversationState.currentMessage.split('\n').map((line, i) => {
+                            // Handle bold text
+                            if (line.startsWith('**') && line.endsWith('**')) {
+                              return (
+                                <h3 key={i} className="font-display text-xl font-semibold mb-3 text-center">
+                                  {line.replace(/\*\*/g, '')}
+                                </h3>
+                              );
+                            }
+                            // Handle emoji lines (details)
+                            if (line.match(/^[📍🏛️⏰💰📞]/)) {
+                              return (
+                                <p key={i} className="text-sm mb-2 flex items-start gap-2">
+                                  <span>{line}</span>
+                                </p>
+                              );
+                            }
+                            // Regular text
+                            return line ? <p key={i} className="mb-2">{line}</p> : <br key={i} />;
+                          })}
+                        </div>
                       </motion.div>
                     </div>
 
