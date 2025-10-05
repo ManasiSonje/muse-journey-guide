@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bot, Compass, Calendar, ArrowRight, MapPin } from 'lucide-react';
+import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 import MuseumCard from '@/components/MuseumCard';
 import MuseumSearchFilters from '@/components/MuseumSearchFilters';
 import { useMuseums } from '@/hooks/useMuseums';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 import heroImage from '@/assets/hero-museum.jpg';
 
 const Dashboard = () => {
@@ -24,12 +27,71 @@ const Dashboard = () => {
     types
   } = useMuseums();
 
+  const [tripCity, setTripCity] = useState('');
+  const [tripTime, setTripTime] = useState('');
+  const [tripResults, setTripResults] = useState<any[]>([]);
+  const [showTripResults, setShowTripResults] = useState(false);
+  const [tripLoading, setTripLoading] = useState(false);
+
   const handleViewMore = (id: number) => {
     console.log('View museum:', id);
   };
 
   const handleBookTicket = (id: number) => {
     console.log('Book ticket for:', id);
+  };
+
+  const handlePlanTrip = async () => {
+    if (!tripCity || !tripTime) {
+      return;
+    }
+
+    setTripLoading(true);
+    setShowTripResults(false);
+
+    const { data: cityMuseums } = await supabase
+      .from('museums')
+      .select('*')
+      .ilike('city', `%${tripCity}%`);
+
+    if (!cityMuseums || cityMuseums.length === 0) {
+      setTripResults([]);
+      setShowTripResults(true);
+      setTripLoading(false);
+      return;
+    }
+
+    const timeInput = tripTime.toLowerCase();
+    const availableMuseums = cityMuseums.filter(museum => {
+      if (!museum.detailed_timings) return true;
+      
+      const timings = museum.detailed_timings as any;
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      
+      for (const day of days) {
+        const dayTiming = timings[day]?.toLowerCase();
+        if (dayTiming && dayTiming !== 'closed' && !dayTiming.includes('closed')) {
+          if (timeInput.includes('morning') || timeInput.includes('am')) {
+            return true;
+          }
+          if (timeInput.includes('afternoon') || timeInput.includes('pm') || timeInput.includes('evening')) {
+            return true;
+          }
+          if (timeInput.match(/\d{1,2}:\d{2}/)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    setTripResults(availableMuseums);
+    setShowTripResults(true);
+    setTripLoading(false);
+
+    setTimeout(() => {
+      document.getElementById('trip-results')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   return (
@@ -241,7 +303,7 @@ const Dashboard = () => {
               <span className="text-glow-teal"> Personalized Trip</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Let our AI create a perfect museum itinerary based on your interests, location, and available time.
+              Plan your perfect museum itinerary based on your city and preferred visiting time.
             </p>
           </motion.div>
 
@@ -252,47 +314,123 @@ const Dashboard = () => {
             className="max-w-4xl mx-auto"
           >
             <div className="glass rounded-3xl p-8 border border-border/20 shadow-elevated">
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-secondary rounded-xl flex items-center justify-center">
-                      <Compass className="w-6 h-6 text-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-display text-2xl font-semibold text-foreground">Smart Trip Planner</h3>
-                      <p className="text-muted-foreground">AI-powered itinerary generation</p>
-                    </div>
+              <div className="space-y-8">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-secondary rounded-xl flex items-center justify-center">
+                    <Compass className="w-6 h-6 text-foreground" />
                   </div>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3 text-muted-foreground">
-                      <MapPin className="w-5 h-5 text-teal" />
-                      <span>Choose your city or location</span>
-                    </div>
-                    <div className="flex items-center space-x-3 text-muted-foreground">
-                      <Calendar className="w-5 h-5 text-golden" />
-                      <span>Set your preferred dates and time</span>
-                    </div>
-                    <div className="flex items-center space-x-3 text-muted-foreground">
-                      <span>Select your interests and preferences</span>
-                    </div>
+                  <div>
+                    <h3 className="font-display text-2xl font-semibold text-foreground">Smart Trip Planner</h3>
+                    <p className="text-muted-foreground">Filter museums by city and visiting hours</p>
                   </div>
                 </div>
                 
-                <div className="space-y-6">
-                  <EnhancedButton variant="premium" size="xl" className="w-full">
-                    <Compass className="w-5 h-5 mr-2" />
-                    Plan My Trip
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </EnhancedButton>
-                  
-                  <div className="text-center text-sm text-muted-foreground">
-                    Get a detailed itinerary with timings, locations, and recommendations
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <MapPin className="w-4 h-4 text-teal" />
+                      <span>Select City</span>
+                    </label>
+                    <Select value={tripCity} onValueChange={setTripCity}>
+                      <SelectTrigger className="bg-background/50 border-border/50 hover:border-teal/50 transition-colors">
+                        <SelectValue placeholder="Choose a city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <Clock className="w-4 h-4 text-golden" />
+                      <span>Preferred Time</span>
+                    </label>
+                    <Select value={tripTime} onValueChange={setTripTime}>
+                      <SelectTrigger className="bg-background/50 border-border/50 hover:border-golden/50 transition-colors">
+                        <SelectValue placeholder="Choose time slot" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="morning">Morning (9 AM - 12 PM)</SelectItem>
+                        <SelectItem value="afternoon">Afternoon (12 PM - 5 PM)</SelectItem>
+                        <SelectItem value="evening">Evening (5 PM - 8 PM)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
+                <EnhancedButton 
+                  variant="premium" 
+                  size="xl" 
+                  className="w-full"
+                  onClick={handlePlanTrip}
+                  disabled={!tripCity || !tripTime || tripLoading}
+                >
+                  {tripLoading ? (
+                    <>
+                      <div className="w-5 h-5 mr-2 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                      Planning Your Trip...
+                    </>
+                  ) : (
+                    <>
+                      <Compass className="w-5 h-5 mr-2" />
+                      Plan My Trip
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </>
+                  )}
+                </EnhancedButton>
               </div>
             </div>
           </motion.div>
+
+          {/* Trip Results */}
+          {showTripResults && (
+            <motion.div
+              id="trip-results"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="max-w-6xl mx-auto mt-12"
+            >
+              <div className="glass rounded-3xl p-8 border border-teal/20 glow-teal">
+                <h3 className="font-display text-2xl font-bold text-foreground mb-6 flex items-center">
+                  <Calendar className="w-6 h-6 mr-3 text-teal" />
+                  Your Trip Plan for {tripCity}
+                </h3>
+
+                {tripResults.length > 0 ? (
+                  <>
+                    <p className="text-muted-foreground mb-6">
+                      Found {tripResults.length} museum{tripResults.length !== 1 ? 's' : ''} available during {tripTime}
+                    </p>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {tripResults.map((museum) => (
+                        <MuseumCard
+                          key={museum.id}
+                          {...museum}
+                          onViewMore={handleViewMore}
+                          onBookTicket={handleBookTicket}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/20 flex items-center justify-center">
+                      <Search className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h4 className="text-xl font-semibold text-foreground mb-2">No museums found</h4>
+                    <p className="text-muted-foreground">
+                      No museums found in {tripCity} for the selected time. Try a different time slot or city.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
       </section>
 
