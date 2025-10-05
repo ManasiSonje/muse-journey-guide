@@ -1,12 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ConversationState {
-  currentFlow: 'menu' | 'booking' | 'details' | 'timeslots' | 'suggest' | null;
+  currentFlow: 'menu' | 'booking' | 'details' | 'timeslots' | 'suggest' | 'trip_planner' | null;
   awaitingInput: string | null;
   currentMessage: string;
   inputPlaceholder?: string;
   showInput: boolean;
   showButtons: boolean;
+  tempData?: any;
 }
 
 export interface FlowResponse {
@@ -57,7 +58,8 @@ export class ChatbotFlowService {
       { id: 'booking', label: 'Museum Booking', icon: '🎫' },
       { id: 'details', label: 'View Museum Details', icon: '🏛️' },
       { id: 'timeslots', label: 'Check Available Time Slots', icon: '⏰' },
-      { id: 'suggest', label: 'Suggest Museums', icon: '🗺️' }
+      { id: 'suggest', label: 'Suggest Museums', icon: '🗺️' },
+      { id: 'trip_planner', label: 'Trip Planner', icon: '🗓️' }
     ];
   }
 
@@ -115,6 +117,20 @@ export class ChatbotFlowService {
           }
         };
 
+      case 'trip_planner':
+        return {
+          message: "Which city would you like to plan your museum trip in?",
+          nextState: {
+            currentFlow: 'trip_planner',
+            awaitingInput: 'city_name',
+            currentMessage: "Which city would you like to plan your museum trip in?",
+            inputPlaceholder: "Enter city name...",
+            showInput: true,
+            showButtons: false,
+            tempData: { step: 'city' }
+          }
+        };
+
       default:
         return {
           message: "I'm not sure what you're looking for. Please select one of the options below:",
@@ -147,6 +163,9 @@ export class ChatbotFlowService {
       
       case 'suggest':
         return await this.handleSuggestFlow(input);
+
+      case 'trip_planner':
+        return await this.handleTripPlannerFlow(input, currentState);
       
       default:
         return {
@@ -294,6 +313,91 @@ ${museum.description || 'No description available'}`;
 
     return {
       message: suggestions,
+      nextState: this.getInitialState()
+    };
+  }
+
+  private async handleTripPlannerFlow(input: string, currentState: ConversationState): Promise<FlowResponse> {
+    const step = currentState.tempData?.step;
+
+    if (step === 'city') {
+      return {
+        message: "What time would you like to visit? (e.g., '10:00 AM', 'morning', '2:00 PM')",
+        nextState: {
+          currentFlow: 'trip_planner',
+          awaitingInput: 'time',
+          currentMessage: "What time would you like to visit? (e.g., '10:00 AM', 'morning', '2:00 PM')",
+          inputPlaceholder: "Enter preferred time...",
+          showInput: true,
+          showButtons: false,
+          tempData: { step: 'time', city: input }
+        }
+      };
+    }
+
+    if (step === 'time') {
+      const city = currentState.tempData?.city;
+      const timeInput = input.toLowerCase();
+      
+      const { data: museums } = await supabase
+        .from('museums')
+        .select('*')
+        .ilike('city', `%${city}%`);
+
+      if (!museums || museums.length === 0) {
+        return {
+          message: `Sorry, I couldn't find any museums in "${city}". Please try again.`,
+          nextState: this.getInitialState()
+        };
+      }
+
+      const availableMuseums = museums.filter(museum => {
+        if (!museum.detailed_timings) return true;
+        
+        const timings = museum.detailed_timings as any;
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        
+        for (const day of days) {
+          const dayTiming = timings[day]?.toLowerCase();
+          if (dayTiming && dayTiming !== 'closed' && !dayTiming.includes('closed')) {
+            if (timeInput.includes('morning') || timeInput.includes('am')) {
+              return true;
+            }
+            if (timeInput.includes('afternoon') || timeInput.includes('pm') || timeInput.includes('evening')) {
+              return true;
+            }
+            if (timeInput.match(/\d{1,2}:\d{2}/)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      });
+
+      if (availableMuseums.length === 0) {
+        return {
+          message: `No museums found in ${city} that are open at ${input}. Here are all museums in ${city}:\n\n${museums.map(m => `🏛️ ${m.name}`).join('\n')}`,
+          nextState: this.getInitialState()
+        };
+      }
+
+      let tripPlan = `**Your Trip Plan for ${city}** 🗓️\n\nAvailable museums for ${input}:\n\n`;
+      
+      availableMuseums.forEach((museum, index) => {
+        tripPlan += `${index + 1}. **${museum.name}**\n`;
+        tripPlan += `📍 ${museum.address || museum.city}\n`;
+        tripPlan += `⏰ ${museum.timings || 'Contact for timings'}\n`;
+        tripPlan += `💰 ${museum.entry_fee || 'Contact for pricing'}\n\n`;
+      });
+
+      return {
+        message: tripPlan,
+        nextState: this.getInitialState()
+      };
+    }
+
+    return {
+      message: "Something went wrong. Let's start over.",
       nextState: this.getInitialState()
     };
   }
