@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Clock } from 'lucide-react';
+import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Clock, Navigation2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import Navigation from '@/components/Navigation';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 import MuseumCard from '@/components/MuseumCard';
@@ -9,7 +10,10 @@ import MuseumSearchFilters from '@/components/MuseumSearchFilters';
 import { useMuseums } from '@/hooks/useMuseums';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import heroImage from '@/assets/hero-museum.jpg';
 
 const Dashboard = () => {
@@ -29,6 +33,7 @@ const Dashboard = () => {
 
   const [tripCity, setTripCity] = useState('');
   const [tripTime, setTripTime] = useState('');
+  const [tripDate, setTripDate] = useState<Date>();
   const [tripResults, setTripResults] = useState<any[]>([]);
   const [showTripResults, setShowTripResults] = useState(false);
   const [tripLoading, setTripLoading] = useState(false);
@@ -41,8 +46,31 @@ const Dashboard = () => {
     console.log('Book ticket for:', id);
   };
 
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // City center coordinates (approximate)
+  const cityCenters: { [key: string]: { lat: number; lng: number } } = {
+    'Mumbai': { lat: 19.0760, lng: 72.8777 },
+    'Pune': { lat: 18.5204, lng: 73.8567 },
+    'Nagpur': { lat: 21.1458, lng: 79.0882 },
+    'Nashik': { lat: 19.9975, lng: 73.7898 },
+    'Aurangabad': { lat: 19.8762, lng: 75.3433 },
+    'Kolhapur': { lat: 16.7050, lng: 74.2433 }
+  };
+
   const handlePlanTrip = async () => {
-    if (!tripCity || !tripTime) {
+    if (!tripCity || !tripTime || !tripDate) {
       return;
     }
 
@@ -61,31 +89,52 @@ const Dashboard = () => {
       return;
     }
 
+    // Get day of week from selected date
+    const dayOfWeek = format(tripDate, 'EEEE').toLowerCase();
+    
     const timeInput = tripTime.toLowerCase();
     const availableMuseums = cityMuseums.filter(museum => {
       if (!museum.detailed_timings) return true;
       
       const timings = museum.detailed_timings as any;
-      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const dayTiming = timings[dayOfWeek]?.toLowerCase();
       
-      for (const day of days) {
-        const dayTiming = timings[day]?.toLowerCase();
-        if (dayTiming && dayTiming !== 'closed' && !dayTiming.includes('closed')) {
-          if (timeInput.includes('morning') || timeInput.includes('am')) {
-            return true;
-          }
-          if (timeInput.includes('afternoon') || timeInput.includes('pm') || timeInput.includes('evening')) {
-            return true;
-          }
-          if (timeInput.match(/\d{1,2}:\d{2}/)) {
-            return true;
-          }
-        }
+      // Check if museum is closed on selected day
+      if (!dayTiming || dayTiming === 'closed' || dayTiming.includes('closed')) {
+        return false;
       }
-      return false;
+      
+      // Check if time matches
+      if (timeInput.includes('morning') || timeInput.includes('am')) {
+        return true;
+      }
+      if (timeInput.includes('afternoon') || timeInput.includes('pm') || timeInput.includes('evening')) {
+        return true;
+      }
+      
+      return true;
     });
 
-    setTripResults(availableMuseums);
+    // Sort by distance from city center
+    const cityCenter = cityCenters[tripCity];
+    const museumsWithDistance = availableMuseums.map(museum => {
+      let distance = 999; // Default distance for museums without coordinates
+      
+      if (cityCenter && museum.latitude && museum.longitude) {
+        const lat = typeof museum.latitude === 'string' ? parseFloat(museum.latitude) : museum.latitude;
+        const lng = typeof museum.longitude === 'string' ? parseFloat(museum.longitude) : museum.longitude;
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          distance = calculateDistance(cityCenter.lat, cityCenter.lng, lat, lng);
+        }
+      }
+      
+      return { ...museum, distance };
+    });
+
+    museumsWithDistance.sort((a, b) => a.distance - b.distance);
+
+    setTripResults(museumsWithDistance.slice(0, 6)); // Show top 6 nearest museums
     setShowTripResults(true);
     setTripLoading(false);
 
@@ -325,7 +374,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-foreground">
                       <MapPin className="w-4 h-4 text-teal" />
@@ -343,6 +392,37 @@ const Dashboard = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-foreground">
+                      <Calendar className="w-4 h-4 text-golden" />
+                      <span>Select Date</span>
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <EnhancedButton
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal bg-background/50 hover:bg-background/70",
+                            !tripDate && "text-muted-foreground"
+                          )}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {tripDate ? format(tripDate, "PPP") : "Pick a date"}
+                        </EnhancedButton>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={tripDate}
+                          onSelect={setTripDate}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="space-y-2">
@@ -368,17 +448,17 @@ const Dashboard = () => {
                   size="xl" 
                   className="w-full"
                   onClick={handlePlanTrip}
-                  disabled={!tripCity || !tripTime || tripLoading}
+                  disabled={!tripCity || !tripTime || !tripDate || tripLoading}
                 >
                   {tripLoading ? (
                     <>
                       <div className="w-5 h-5 mr-2 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                      Planning Your Trip...
+                      Finding Nearest Museums...
                     </>
                   ) : (
                     <>
-                      <Compass className="w-5 h-5 mr-2" />
-                      Plan My Trip
+                      <Navigation2 className="w-5 h-5 mr-2" />
+                      Generate Trip Plan
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </>
                   )}
@@ -396,24 +476,44 @@ const Dashboard = () => {
               className="max-w-6xl mx-auto mt-12"
             >
               <div className="glass rounded-3xl p-8 border border-teal/20 glow-teal">
-                <h3 className="font-display text-2xl font-bold text-foreground mb-6 flex items-center">
-                  <Calendar className="w-6 h-6 mr-3 text-teal" />
-                  Your Trip Plan for {tripCity}
-                </h3>
+                <div className="space-y-4 mb-6">
+                  <h3 className="font-display text-2xl font-bold text-foreground flex items-center">
+                    <Navigation2 className="w-6 h-6 mr-3 text-teal" />
+                    Your Trip Plan for {tripCity}
+                  </h3>
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-golden" />
+                      <span>{tripDate ? format(tripDate, 'EEEE, MMMM d, yyyy') : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-teal" />
+                      <span className="capitalize">{tripTime}</span>
+                    </div>
+                  </div>
+                </div>
 
                 {tripResults.length > 0 ? (
                   <>
-                    <p className="text-muted-foreground mb-6">
-                      Found {tripResults.length} museum{tripResults.length !== 1 ? 's' : ''} available during {tripTime}
+                    <p className="text-muted-foreground mb-6 flex items-center gap-2">
+                      <span className="font-semibold text-foreground">{tripResults.length}</span> 
+                      nearest museum{tripResults.length !== 1 ? 's' : ''} available on {tripDate ? format(tripDate, 'EEEE') : 'the selected day'} during {tripTime}
                     </p>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {tripResults.map((museum) => (
-                        <MuseumCard
-                          key={museum.id}
-                          {...museum}
-                          onViewMore={handleViewMore}
-                          onBookTicket={handleBookTicket}
-                        />
+                      {tripResults.map((museum, index) => (
+                        <div key={museum.id} className="relative">
+                          {museum.distance && museum.distance < 999 && (
+                            <div className="absolute -top-2 -right-2 z-10 bg-teal/90 text-background px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-lg">
+                              <Navigation2 className="w-3 h-3" />
+                              {museum.distance.toFixed(1)} km
+                            </div>
+                          )}
+                          <MuseumCard
+                            {...museum}
+                            onViewMore={handleViewMore}
+                            onBookTicket={handleBookTicket}
+                          />
+                        </div>
                       ))}
                     </div>
                   </>
@@ -424,7 +524,7 @@ const Dashboard = () => {
                     </div>
                     <h4 className="text-xl font-semibold text-foreground mb-2">No museums found</h4>
                     <p className="text-muted-foreground">
-                      No museums found in {tripCity} for the selected time. Try a different time slot or city.
+                      No museums found in {tripCity} that are open on {tripDate ? format(tripDate, 'EEEE') : 'the selected day'} during {tripTime}. Try a different date, time, or city.
                     </p>
                   </div>
                 )}

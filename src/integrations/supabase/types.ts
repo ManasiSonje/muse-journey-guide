@@ -26,6 +26,8 @@ export type Database = {
           entry_fee: string | null
           established: string | null
           id: number
+          latitude: number | null
+          longitude: number | null
           name: string
           pricing: Json | null
           reviews: Json | null
@@ -45,6 +47,8 @@ export type Database = {
           entry_fee?: string | null
           established?: string | null
           id?: number
+          latitude?: number | null
+          longitude?: number | null
           name: string
           pricing?: Json | null
           reviews?: Json | null
@@ -64,6 +68,8 @@ export type Database = {
           entry_fee?: string | null
           established?: string | null
           id?: number
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           pricing?: Json | null
           reviews?: Json | null
@@ -135,6 +141,8 @@ export type Database = {
           entry_fee: string | null
           established: string | null
           id: number
+          latitude: number | null
+          longitude: number | null
           name: string
           pricing: Json | null
           reviews: Json | null
