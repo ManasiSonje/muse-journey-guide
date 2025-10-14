@@ -14,13 +14,118 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      museums: {
+        Row: {
+          address: string | null
+          booking_link: string | null
+          city: string
+          created_at: string | null
+          description: string | null
+          detailed_timings: Json | null
+          entry_fee: string | null
+          established: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          pricing: Json | null
+          reviews: Json | null
+          timings: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          booking_link?: string | null
+          city: string
+          created_at?: string | null
+          description?: string | null
+          detailed_timings?: Json | null
+          entry_fee?: string | null
+          established?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          pricing?: Json | null
+          reviews?: Json | null
+          timings?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          booking_link?: string | null
+          city?: string
+          created_at?: string | null
+          description?: string | null
+          detailed_timings?: Json | null
+          entry_fee?: string | null
+          established?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          pricing?: Json | null
+          reviews?: Json | null
+          timings?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_museums: {
+        Args: { search_query: string }
+        Returns: {
+          address: string
+          booking_link: string
+          city: string
+          description: string
+          detailed_timings: Json
+          entry_fee: string
+          established: number
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          pricing: Json
+          reviews: Json
+          timings: string
+          type: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
