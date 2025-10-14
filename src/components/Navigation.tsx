@@ -87,7 +87,7 @@ const Navigation = () => {
                 >
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-gradient-primary text-black font-semibold">
-                      {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                      {profile?.full_name?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -99,7 +99,7 @@ const Navigation = () => {
               >
                 <div className="px-3 py-2 border-b border-border/20">
                   <p className="text-sm font-medium text-foreground">
-                    {profile?.first_name} {profile?.last_name}
+                    {profile?.full_name || 'User'}
                   </p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                   {isAdmin && (

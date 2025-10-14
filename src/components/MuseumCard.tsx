@@ -3,23 +3,21 @@ import { MapPin, Clock, Star, ArrowRight } from 'lucide-react';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 
 interface MuseumCardProps {
-  id: number;
+  id: string;
   name: string;
   city: string | null;
-  established?: string | null;
+  established?: number | null;
   type: string | null;
   description: string | null;
   address?: string | null;
   timings?: string | null;
   entry_fee?: string | null;
-  contact?: string | null;
-  website?: string | null;
-  onViewMore: (id: number) => void;
-  onBookTicket: (id: number) => void;
+  onViewMore: (id: string) => void;
+  onBookTicket: (id: string) => void;
 }
 
 const MuseumCard = ({ 
-  id, name, city, established, type, description, address, timings, entry_fee, contact, website, onViewMore, onBookTicket 
+  id, name, city, established, type, description, address, timings, entry_fee, onViewMore, onBookTicket 
 }: MuseumCardProps) => {
   return (
     <motion.div

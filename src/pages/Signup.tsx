@@ -86,11 +86,7 @@ const Signup = () => {
       formData.email,
       formData.password,
       {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        phone: formData.phone,
-        country: formData.country,
-        city: formData.city
+        full_name: `${formData.firstName} ${formData.lastName}`
       }
     );
     

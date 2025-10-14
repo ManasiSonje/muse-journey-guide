@@ -205,7 +205,7 @@ export class ChatbotFlowService {
       };
     } else {
       return {
-        message: `${museum.name} found, but no direct booking available. Please contact them at: ${museum.contact || 'Contact information not available'}`,
+        message: `${museum.name} found, but no direct booking available. Please check their website for more information.`,
         nextState: this.getInitialState()
       };
     }
@@ -235,10 +235,6 @@ export class ChatbotFlowService {
 💰 ${museum.entry_fee || 'Contact for pricing'}
 
 ${museum.description || 'No description available'}`;
-
-    if (museum.contact) {
-      details += `\n\n📞 ${museum.contact}`;
-    }
 
     return {
       message: details,
@@ -274,10 +270,6 @@ ${museum.description || 'No description available'}`;
       Object.entries(detailedTimings).forEach(([day, timing]) => {
         timingInfo += `\n• ${day}: ${timing}`;
       });
-    }
-
-    if (museum.contact) {
-      timingInfo += `\n\n📞 Contact: ${museum.contact}`;
     }
 
     return {

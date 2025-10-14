@@ -5,13 +5,9 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
   id: string;
-  user_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  country: string | null;
-  city: string | null;
-  role: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  email: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -21,7 +17,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, userData: { first_name: string; last_name: string; phone: string; country: string; city: string }) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, userData: { full_name: string }) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
@@ -41,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
       
       if (error) throw error;
@@ -88,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (
     email: string, 
     password: string, 
-    userData: { first_name: string; last_name: string; phone: string; country: string; city: string }
+    userData: { full_name: string }
   ) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
@@ -179,7 +175,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = false; // No role field in profiles table
 
   const value = {
     user,

@@ -14,6 +14,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import TripPlannerMap from '@/components/TripPlannerMap';
 import heroImage from '@/assets/hero-museum.jpg';
 
 const Dashboard = () => {
@@ -32,17 +33,18 @@ const Dashboard = () => {
   } = useMuseums();
 
   const [tripCity, setTripCity] = useState('');
-  const [tripTime, setTripTime] = useState('');
+  const [tripHours, setTripHours] = useState('');
   const [tripDate, setTripDate] = useState<Date>();
   const [tripResults, setTripResults] = useState<any[]>([]);
   const [showTripResults, setShowTripResults] = useState(false);
   const [tripLoading, setTripLoading] = useState(false);
+  const [mapCenter, setMapCenter] = useState({ lat: 19.0760, lng: 72.8777 });
 
-  const handleViewMore = (id: number) => {
+  const handleViewMore = (id: string) => {
     console.log('View museum:', id);
   };
 
-  const handleBookTicket = (id: number) => {
+  const handleBookTicket = (id: string) => {
     console.log('Book ticket for:', id);
   };
 
@@ -70,7 +72,7 @@ const Dashboard = () => {
   };
 
   const handlePlanTrip = async () => {
-    if (!tripCity || !tripTime || !tripDate) {
+    if (!tripCity || !tripHours || !tripDate) {
       return;
     }
 
@@ -92,7 +94,10 @@ const Dashboard = () => {
     // Get day of week from selected date
     const dayOfWeek = format(tripDate, 'EEEE').toLowerCase();
     
-    const timeInput = tripTime.toLowerCase();
+    // Calculate number of museums based on hours (assuming 2 hours per museum)
+    const hours = parseInt(tripHours);
+    const maxMuseums = Math.max(1, Math.floor(hours / 2));
+    
     const availableMuseums = cityMuseums.filter(museum => {
       if (!museum.detailed_timings) return true;
       
@@ -104,19 +109,15 @@ const Dashboard = () => {
         return false;
       }
       
-      // Check if time matches
-      if (timeInput.includes('morning') || timeInput.includes('am')) {
-        return true;
-      }
-      if (timeInput.includes('afternoon') || timeInput.includes('pm') || timeInput.includes('evening')) {
-        return true;
-      }
-      
       return true;
     });
 
     // Sort by distance from city center
     const cityCenter = cityCenters[tripCity];
+    if (cityCenter) {
+      setMapCenter(cityCenter);
+    }
+    
     const museumsWithDistance = availableMuseums.map(museum => {
       let distance = 999; // Default distance for museums without coordinates
       
@@ -134,7 +135,7 @@ const Dashboard = () => {
 
     museumsWithDistance.sort((a, b) => a.distance - b.distance);
 
-    setTripResults(museumsWithDistance.slice(0, 6)); // Show top 6 nearest museums
+    setTripResults(museumsWithDistance.slice(0, maxMuseums));
     setShowTripResults(true);
     setTripLoading(false);
 
@@ -352,7 +353,7 @@ const Dashboard = () => {
               <span className="text-glow-teal"> Personalized Trip</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Plan your perfect museum itinerary based on your city and preferred visiting time.
+              Plan your perfect museum itinerary based on your available hours.
             </p>
           </motion.div>
 
@@ -370,7 +371,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h3 className="font-display text-2xl font-semibold text-foreground">Smart Trip Planner</h3>
-                    <p className="text-muted-foreground">Filter museums by city and visiting hours</p>
+                    <p className="text-muted-foreground">Filter museums by city, date, and available hours</p>
                   </div>
                 </div>
                 
@@ -428,16 +429,17 @@ const Dashboard = () => {
                   <div className="space-y-2">
                     <label className="flex items-center space-x-2 text-sm font-medium text-foreground">
                       <Clock className="w-4 h-4 text-golden" />
-                      <span>Preferred Time</span>
+                      <span>Number of Visiting Hours</span>
                     </label>
-                    <Select value={tripTime} onValueChange={setTripTime}>
+                    <Select value={tripHours} onValueChange={setTripHours}>
                       <SelectTrigger className="bg-background/50 border-border/50 hover:border-golden/50 transition-colors">
-                        <SelectValue placeholder="Choose time slot" />
+                        <SelectValue placeholder="Select hours" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="morning">Morning (9 AM - 12 PM)</SelectItem>
-                        <SelectItem value="afternoon">Afternoon (12 PM - 5 PM)</SelectItem>
-                        <SelectItem value="evening">Evening (5 PM - 8 PM)</SelectItem>
+                        <SelectItem value="2">2 hours (1 museum)</SelectItem>
+                        <SelectItem value="4">4 hours (2 museums)</SelectItem>
+                        <SelectItem value="6">6 hours (3 museums)</SelectItem>
+                        <SelectItem value="8">8 hours (4 museums)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -448,7 +450,7 @@ const Dashboard = () => {
                   size="xl" 
                   className="w-full"
                   onClick={handlePlanTrip}
-                  disabled={!tripCity || !tripTime || !tripDate || tripLoading}
+                  disabled={!tripCity || !tripHours || !tripDate || tripLoading}
                 >
                   {tripLoading ? (
                     <>
@@ -488,7 +490,7 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-teal" />
-                      <span className="capitalize">{tripTime}</span>
+                      <span>{tripHours} hours</span>
                     </div>
                   </div>
                 </div>
@@ -497,8 +499,20 @@ const Dashboard = () => {
                   <>
                     <p className="text-muted-foreground mb-6 flex items-center gap-2">
                       <span className="font-semibold text-foreground">{tripResults.length}</span> 
-                      nearest museum{tripResults.length !== 1 ? 's' : ''} available on {tripDate ? format(tripDate, 'EEEE') : 'the selected day'} during {tripTime}
+                      museum{tripResults.length !== 1 ? 's' : ''} recommended for your {tripHours}-hour visit on {tripDate ? format(tripDate, 'EEEE') : 'the selected day'}
                     </p>
+                    
+                    {/* Map View */}
+                    <div className="mb-8">
+                      <h4 className="font-display text-xl font-semibold text-foreground mb-4 flex items-center">
+                        <MapPin className="w-5 h-5 mr-2 text-teal" />
+                        Museums on Map
+                      </h4>
+                      <TripPlannerMap museums={tripResults} cityCenter={mapCenter} />
+                    </div>
+
+                    {/* Museum Cards */}
+                    <h4 className="font-display text-xl font-semibold text-foreground mb-4">Museum Details</h4>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {tripResults.map((museum, index) => (
                         <div key={museum.id} className="relative">
@@ -524,7 +538,7 @@ const Dashboard = () => {
                     </div>
                     <h4 className="text-xl font-semibold text-foreground mb-2">No museums found</h4>
                     <p className="text-muted-foreground">
-                      No museums found in {tripCity} that are open on {tripDate ? format(tripDate, 'EEEE') : 'the selected day'} during {tripTime}. Try a different date, time, or city.
+                      No museums found in {tripCity} that are open on {tripDate ? format(tripDate, 'EEEE') : 'the selected day'}. Try a different date or city.
                     </p>
                   </div>
                 )}

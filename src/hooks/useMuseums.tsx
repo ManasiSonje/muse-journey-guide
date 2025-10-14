@@ -23,22 +23,22 @@ export interface Pricing {
 }
 
 export interface Museum {
-  id: number;
+  id: string;
   name: string;
   city: string | null;
-  established?: string | null;
+  established?: number | null;
   type: string | null;
   description: string | null;
   address?: string | null;
   timings?: string | null;
   entry_fee?: string | null;
-  contact?: string | null;
-  website?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at?: string;
   updated_at?: string;
-  detailed_timings?: any; // JSON data from database
-  reviews?: any; // JSON data from database
-  pricing?: any; // JSON data from database
+  detailed_timings?: any;
+  reviews?: any;
+  pricing?: any;
   booking_link?: string;
 }
 
@@ -105,13 +105,11 @@ export const useMuseums = () => {
   }, [museums, searchQuery, selectedCity, selectedType]);
 
   // Advanced search function for future use
-  const searchMuseums = async (searchName?: string, searchCity?: string, searchType?: string) => {
+  const searchMuseums = async (searchQuery?: string) => {
     try {
       const { data, error } = await supabase
         .rpc('search_museums', {
-          search_name: searchName || null,
-          search_city: searchCity || null,
-          search_type: searchType || null
+          search_query: searchQuery || ''
         });
 
       if (error) throw error;
