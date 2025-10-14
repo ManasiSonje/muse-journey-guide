@@ -10,148 +10,17 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
-      museums: {
-        Row: {
-          address: string | null
-          booking_link: string | null
-          city: string | null
-          contact: string | null
-          created_at: string
-          description: string | null
-          detailed_timings: Json | null
-          entry_fee: string | null
-          established: string | null
-          id: number
-          latitude: number | null
-          longitude: number | null
-          name: string
-          pricing: Json | null
-          reviews: Json | null
-          timings: string | null
-          type: string | null
-          updated_at: string
-          website: string | null
-        }
-        Insert: {
-          address?: string | null
-          booking_link?: string | null
-          city?: string | null
-          contact?: string | null
-          created_at?: string
-          description?: string | null
-          detailed_timings?: Json | null
-          entry_fee?: string | null
-          established?: string | null
-          id?: number
-          latitude?: number | null
-          longitude?: number | null
-          name: string
-          pricing?: Json | null
-          reviews?: Json | null
-          timings?: string | null
-          type?: string | null
-          updated_at?: string
-          website?: string | null
-        }
-        Update: {
-          address?: string | null
-          booking_link?: string | null
-          city?: string | null
-          contact?: string | null
-          created_at?: string
-          description?: string | null
-          detailed_timings?: Json | null
-          entry_fee?: string | null
-          established?: string | null
-          id?: number
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          pricing?: Json | null
-          reviews?: Json | null
-          timings?: string | null
-          type?: string | null
-          updated_at?: string
-          website?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          city: string | null
-          country: string | null
-          created_at: string
-          first_name: string | null
-          id: string
-          last_name: string | null
-          phone: string | null
-          role: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          first_name?: string | null
-          id?: string
-          last_name?: string | null
-          phone?: string | null
-          role?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          city?: string | null
-          country?: string | null
-          created_at?: string
-          first_name?: string | null
-          id?: string
-          last_name?: string | null
-          phone?: string | null
-          role?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      search_museums: {
-        Args: {
-          search_city?: string
-          search_name?: string
-          search_type?: string
-        }
-        Returns: {
-          address: string | null
-          booking_link: string | null
-          city: string | null
-          contact: string | null
-          created_at: string
-          description: string | null
-          detailed_timings: Json | null
-          entry_fee: string | null
-          established: string | null
-          id: number
-          latitude: number | null
-          longitude: number | null
-          name: string
-          pricing: Json | null
-          reviews: Json | null
-          timings: string | null
-          type: string | null
-          updated_at: string
-          website: string | null
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
