@@ -41,7 +41,8 @@ const Dashboard = () => {
   const [mapCenter, setMapCenter] = useState({ lat: 19.0760, lng: 72.8777 });
 
   const handleViewMore = (id: string) => {
-    console.log('View museum:', id);
+    // Navigate to chatbot with museum ID
+    window.location.href = `/chatbot?museum=${id}`;
   };
 
   const handleBookTicket = (id: string) => {

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Play, Search, MapPin, Calendar, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ const Chatbot = () => {
   );
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedMuseumId, setSelectedMuseumId] = useState<string | null>(null);
 
   // Trip planning state
   const [tripLocation, setTripLocation] = useState('');
@@ -77,6 +78,57 @@ const Chatbot = () => {
   const resetToMenu = () => {
     setConversationState(flowService.getInitialState());
     setInputValue('');
+    setSelectedMuseumId(null);
+  };
+
+  // Handle museum query parameter from Dashboard
+  const [searchParams] = useSearchParams();
+  
+  useEffect(() => {
+    const museumId = searchParams.get('museum');
+    if (museumId && user) {
+      setSelectedMuseumId(museumId);
+      fetchAndDisplayMuseumDetails(museumId);
+    }
+  }, [searchParams, user]);
+
+  const fetchAndDisplayMuseumDetails = async (museumId: string) => {
+    try {
+      const { data: museum, error } = await supabase
+        .from('museums')
+        .select('*')
+        .eq('id', museumId)
+        .maybeSingle();
+
+      if (error || !museum) {
+        setConversationState({
+          currentFlow: 'menu',
+          awaitingInput: null,
+          currentMessage: "Sorry, I couldn't find that museum. How else can I help you?",
+          showInput: false,
+          showButtons: true
+        });
+        return;
+      }
+
+      let details = `**${museum.name}**
+
+📍 ${museum.city} | 🏛️ ${museum.type || 'Museum'}
+⏰ ${museum.timings || 'Contact for timings'}
+💰 ${museum.entry_fee || 'Contact for pricing'}
+
+${museum.description || 'No description available'}`;
+
+      setConversationState({
+        currentFlow: null,
+        awaitingInput: null,
+        currentMessage: details,
+        showInput: false,
+        showButtons: true
+      });
+    } catch (error) {
+      console.error('Error fetching museum details:', error);
+    }
   };
 
   const generateTrip = () => {

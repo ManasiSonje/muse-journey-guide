@@ -57,9 +57,7 @@ export class ChatbotFlowService {
     return [
       { id: 'booking', label: 'Museum Booking', icon: '🎫' },
       { id: 'details', label: 'View Museum Details', icon: '🏛️' },
-      { id: 'timeslots', label: 'Check Available Time Slots', icon: '⏰' },
-      { id: 'suggest', label: 'Suggest Museums', icon: '🗺️' },
-      { id: 'trip_planner', label: 'Trip Planner', icon: '🗓️' }
+      { id: 'timeslots', label: 'Check Available Time Slots', icon: '⏰' }
     ];
   }
 
@@ -101,33 +99,6 @@ export class ChatbotFlowService {
             inputPlaceholder: "Enter museum name...",
             showInput: true,
             showButtons: false
-          }
-        };
-
-      case 'suggest':
-        return {
-          message: "Please enter the city name where you want to visit a museum.",
-          nextState: {
-            currentFlow: 'suggest',
-            awaitingInput: 'city_name',
-            currentMessage: "Please enter the city name where you want to visit a museum.",
-            inputPlaceholder: "Enter city name...",
-            showInput: true,
-            showButtons: false
-          }
-        };
-
-      case 'trip_planner':
-        return {
-          message: "Which city would you like to plan your museum trip in?",
-          nextState: {
-            currentFlow: 'trip_planner',
-            awaitingInput: 'city_name',
-            currentMessage: "Which city would you like to plan your museum trip in?",
-            inputPlaceholder: "Enter city name...",
-            showInput: true,
-            showButtons: false,
-            tempData: { step: 'city' }
           }
         };
 
@@ -259,17 +230,33 @@ ${museum.description || 'No description available'}`;
       };
     }
 
-    let timingInfo = `**${museum.name}** - Available Time Slots
-
-⏰ ${museum.timings || 'Contact museum for current timings'}`;
+    let timingInfo = `**${museum.name}** - Available Time Slots\n\n`;
 
     if (museum.detailed_timings) {
       const detailedTimings = museum.detailed_timings as any;
-      timingInfo += `\n\n📅 Detailed Schedule:`;
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
       
-      Object.entries(detailedTimings).forEach(([day, timing]) => {
-        timingInfo += `\n• ${day}: ${timing}`;
+      timingInfo += `📅 Weekly Schedule:\n\n`;
+      
+      days.forEach((day, index) => {
+        const timing = detailedTimings[day];
+        const status = timing && timing.toLowerCase() !== 'closed' ? '✅ Open' : '❌ Closed';
+        timingInfo += `${dayNames[index]}: ${status}`;
+        if (timing && timing.toLowerCase() !== 'closed') {
+          timingInfo += ` (${timing})`;
+        }
+        timingInfo += '\n';
       });
+      
+      timingInfo += `\n💰 Entry Fee: ${museum.entry_fee || 'Contact for pricing'}`;
+      
+      if (museum.booking_link) {
+        timingInfo += `\n\n🎫 You can book tickets using the "Museum Booking" option.`;
+      }
+    } else {
+      timingInfo += `⏰ ${museum.timings || 'Contact museum for current timings'}\n`;
+      timingInfo += `💰 Entry Fee: ${museum.entry_fee || 'Contact for pricing'}`;
     }
 
     return {
