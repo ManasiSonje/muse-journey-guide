@@ -58,13 +58,18 @@ const Chatbot = () => {
     if (!inputValue.trim() || !user || isProcessing) return;
     
     setIsProcessing(true);
+    console.log('Input submitted:', inputValue);
+    console.log('Current state:', conversationState);
+    
     try {
       const response = await flowService.processUserInput(inputValue, conversationState);
+      console.log('Flow response:', response);
       
       if (response.redirectUrl) {
         window.open(response.redirectUrl, '_blank');
       }
       
+      console.log('Setting new state:', response.nextState);
       setConversationState(response.nextState);
       setInputValue('');
     } catch (error) {

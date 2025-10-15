@@ -196,7 +196,9 @@ export class ChatbotFlowService {
   }
 
   private async handleDetailsFlow(museumName: string): Promise<FlowResponse> {
+    console.log('handleDetailsFlow called with:', museumName);
     const museum = await this.getMuseumByName(museumName);
+    console.log('Museum found:', museum);
     
     if (!museum) {
       return {
@@ -220,6 +222,8 @@ export class ChatbotFlowService {
 
 ${museum.description || 'No description available'}`;
 
+    console.log('Details generated:', details);
+    
     return {
       message: details,
       nextState: {
@@ -233,7 +237,9 @@ ${museum.description || 'No description available'}`;
   }
 
   private async handleTimeslotsFlow(museumName: string): Promise<FlowResponse> {
+    console.log('handleTimeslotsFlow called with:', museumName);
     const museum = await this.getMuseumByName(museumName);
+    console.log('Museum found for timeslots:', museum);
     
     if (!museum) {
       return {
@@ -277,6 +283,8 @@ ${museum.description || 'No description available'}`;
       timingInfo += `⏰ ${museum.timings || 'Contact museum for current timings'}\n`;
       timingInfo += `💰 Entry Fee: ${museum.entry_fee || 'Contact for pricing'}`;
     }
+
+    console.log('Timing info generated:', timingInfo);
 
     return {
       message: timingInfo,
