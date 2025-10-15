@@ -171,13 +171,26 @@ export class ChatbotFlowService {
       // Direct redirect for booking
       return {
         message: `Redirecting you to book ${museum.name}...`,
-        nextState: this.getInitialState(),
+        nextState: {
+          currentFlow: null,
+          awaitingInput: null,
+          currentMessage: `Redirecting you to book ${museum.name}...`,
+          showInput: false,
+          showButtons: true
+        },
         redirectUrl: museum.booking_link
       };
     } else {
+      const msg = `${museum.name} found, but no direct booking available. Please check their website for more information.`;
       return {
-        message: `${museum.name} found, but no direct booking available. Please check their website for more information.`,
-        nextState: this.getInitialState()
+        message: msg,
+        nextState: {
+          currentFlow: null,
+          awaitingInput: null,
+          currentMessage: msg,
+          showInput: false,
+          showButtons: true
+        }
       };
     }
   }
@@ -209,7 +222,13 @@ ${museum.description || 'No description available'}`;
 
     return {
       message: details,
-      nextState: this.getInitialState()
+      nextState: {
+        currentFlow: null,
+        awaitingInput: null,
+        currentMessage: details,
+        showInput: false,
+        showButtons: true
+      }
     };
   }
 
@@ -261,7 +280,13 @@ ${museum.description || 'No description available'}`;
 
     return {
       message: timingInfo,
-      nextState: this.getInitialState()
+      nextState: {
+        currentFlow: null,
+        awaitingInput: null,
+        currentMessage: timingInfo,
+        showInput: false,
+        showButtons: true
+      }
     };
   }
 
