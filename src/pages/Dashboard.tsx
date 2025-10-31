@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Clock, Navigation2 } from 'lucide-react';
+import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Clock, Navigation2, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import Navigation from '@/components/Navigation';
@@ -8,6 +8,8 @@ import { EnhancedButton } from '@/components/ui/enhanced-button';
 import MuseumCard from '@/components/MuseumCard';
 import MuseumSearchFilters from '@/components/MuseumSearchFilters';
 import { useMuseums } from '@/hooks/useMuseums';
+import { useAuth } from '@/hooks/useAuth';
+import { useMuseumVisits } from '@/hooks/useMuseumVisits';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -18,6 +20,7 @@ import TripPlannerMap from '@/components/TripPlannerMap';
 import heroImage from '@/assets/hero-museum.jpg';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const {
     museums,
     loading,
@@ -32,6 +35,8 @@ const Dashboard = () => {
     types
   } = useMuseums();
 
+  const { visitedMuseums, loading: visitsLoading, trackMuseumVisit } = useMuseumVisits(user?.id);
+
   const [tripCity, setTripCity] = useState('');
   const [tripHours, setTripHours] = useState('');
   const [tripDate, setTripDate] = useState<Date>();
@@ -41,11 +46,17 @@ const Dashboard = () => {
   const [mapCenter, setMapCenter] = useState({ lat: 19.0760, lng: 72.8777 });
 
   const handleViewMore = (id: string) => {
+    if (user) {
+      trackMuseumVisit(id);
+    }
     // Navigate to chatbot with museum ID
     window.location.href = `/chatbot?museum=${id}`;
   };
 
   const handleBookTicket = (id: string) => {
+    if (user) {
+      trackMuseumVisit(id);
+    }
     console.log('Book ticket for:', id);
   };
 
@@ -256,6 +267,36 @@ const Dashboard = () => {
 
           {/* Search and Filters */}
           <div className="max-w-5xl mx-auto mb-16">
+            {/* Top Searched Museums */}
+            {user && visitedMuseums.length > 0 && (
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                className="mb-12"
+              >
+                <div className="flex items-center space-x-3 mb-6">
+                  <Star className="w-6 h-6 text-golden" />
+                  <h3 className="font-display text-2xl font-semibold text-foreground">
+                    Your Top Searched Museums
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                  {visitedMuseums.slice(0, 3).map((museum) => (
+                    <MuseumCard
+                      key={museum.id}
+                      {...museum}
+                      onViewMore={handleViewMore}
+                      onBookTicket={handleBookTicket}
+                    />
+                  ))}
+                </div>
+                
+                <div className="border-t border-border/20 my-8"></div>
+              </motion.div>
+            )}
+            
             <MuseumSearchFilters
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}

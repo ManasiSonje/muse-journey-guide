@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      museum_visits: {
+        Row: {
+          id: string
+          museum_id: string | null
+          user_id: string | null
+          visited_at: string | null
+        }
+        Insert: {
+          id?: string
+          museum_id?: string | null
+          user_id?: string | null
+          visited_at?: string | null
+        }
+        Update: {
+          id?: string
+          museum_id?: string | null
+          user_id?: string | null
+          visited_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "museum_visits_museum_id_fkey"
+            columns: ["museum_id"]
+            isOneToOne: false
+            referencedRelation: "museums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       museums: {
         Row: {
           address: string | null
@@ -126,6 +155,7 @@ export type Database = {
           type: string
         }[]
       }
+      track_museum_visit: { Args: { p_museum_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
