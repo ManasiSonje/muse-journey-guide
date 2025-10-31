@@ -6,7 +6,7 @@ interface MuseumCardProps {
   id: string;
   name: string;
   city: string | null;
-  established?: number | null;
+  established?: string | null;
   type: string | null;
   description: string | null;
   address?: string | null;

@@ -26,14 +26,14 @@ export interface Museum {
   id: string;
   name: string;
   city: string | null;
-  established?: number | null;
+  established?: string | null;
   type: string | null;
   description: string | null;
   address?: string | null;
   timings?: string | null;
   entry_fee?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude?: string | null;
+  longitude?: string | null;
   created_at?: string;
   updated_at?: string;
   detailed_timings?: any;

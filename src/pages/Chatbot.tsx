@@ -149,15 +149,22 @@ ${museum.description || 'No description available'}`;
   };
 
   const searchYouTubeVideos = async (museumName: string) => {
-    if (!museumName.trim()) return;
+    if (!museumName.trim()) {
+      console.log('Empty museum name, skipping search');
+      return;
+    }
     
+    console.log('Starting video search for:', museumName);
     setVideoLoading(true);
     setVideoError(null);
     
     try {
+      console.log('Invoking youtube-search function...');
       const { data, error } = await supabase.functions.invoke('youtube-search', {
         body: { query: museumName }
       });
+      
+      console.log('YouTube search response:', { data, error });
       
       if (error) {
         console.error('YouTube API Error:', error);
@@ -167,9 +174,11 @@ ${museum.description || 'No description available'}`;
       }
       
       if (data && data.hasResults && data.videos.length > 0) {
+        console.log(`Found ${data.videos.length} videos`);
         setVideos(data.videos);
         setVideoError(null);
       } else {
+        console.log('No results from primary search, trying fallback');
         // Try fallback search with more general terms
         await searchFallbackVideos(museumName);
       }
@@ -214,12 +223,18 @@ ${museum.description || 'No description available'}`;
   };
 
   const searchMuseum = async () => {
-    if (!selectedMuseum) return;
+    if (!selectedMuseum.trim()) {
+      console.log('No museum selected');
+      return;
+    }
+    
+    console.log('Searching for museum:', selectedMuseum);
     
     // Search for YouTube videos
     await searchYouTubeVideos(selectedMuseum);
     
-    setSelectedMuseum('');
+    // Keep the search term visible until results load
+    // setSelectedMuseum('');
   };
 
   return (
