@@ -23,10 +23,10 @@ export type Database = {
           description: string | null
           detailed_timings: Json | null
           entry_fee: string | null
-          established: number | null
+          established: string | null
           id: string
-          latitude: number | null
-          longitude: number | null
+          latitude: string | null
+          longitude: string | null
           name: string
           pricing: Json | null
           reviews: Json | null
@@ -42,10 +42,10 @@ export type Database = {
           description?: string | null
           detailed_timings?: Json | null
           entry_fee?: string | null
-          established?: number | null
+          established?: string | null
           id?: string
-          latitude?: number | null
-          longitude?: number | null
+          latitude?: string | null
+          longitude?: string | null
           name: string
           pricing?: Json | null
           reviews?: Json | null
@@ -61,10 +61,10 @@ export type Database = {
           description?: string | null
           detailed_timings?: Json | null
           entry_fee?: string | null
-          established?: number | null
+          established?: string | null
           id?: string
-          latitude?: number | null
-          longitude?: number | null
+          latitude?: string | null
+          longitude?: string | null
           name?: string
           pricing?: Json | null
           reviews?: Json | null
