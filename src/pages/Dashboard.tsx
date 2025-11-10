@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Bot, Compass, Calendar, ArrowRight, MapPin, Clock, Navigation2, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -83,6 +83,13 @@ const Dashboard = () => {
     'Kolhapur': { lat: 16.7050, lng: 74.2433 }
   };
 
+  // Automatically display top 3 museums when all fields are filled
+  useEffect(() => {
+    if (tripCity && tripHours && tripDate) {
+      handlePlanTrip();
+    }
+  }, [tripCity, tripHours, tripDate]);
+
   const handlePlanTrip = async () => {
     if (!tripCity || !tripHours || !tripDate) {
       return;
@@ -106,9 +113,8 @@ const Dashboard = () => {
     // Get day of week from selected date
     const dayOfWeek = format(tripDate, 'EEEE').toLowerCase();
     
-    // Calculate number of museums based on hours (assuming 2 hours per museum)
-    const hours = parseInt(tripHours);
-    const maxMuseums = Math.max(1, Math.floor(hours / 2));
+    // Always show top 3 museums
+    const maxMuseums = 3;
     
     const availableMuseums = cityMuseums.filter(museum => {
       if (!museum.detailed_timings) return true;
