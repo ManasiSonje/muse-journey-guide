@@ -83,12 +83,6 @@ const Dashboard = () => {
     'Kolhapur': { lat: 16.7050, lng: 74.2433 }
   };
 
-  // Automatically display top 3 museums when all fields are filled
-  useEffect(() => {
-    if (tripCity && tripHours && tripDate) {
-      handlePlanTrip();
-    }
-  }, [tripCity, tripHours, tripDate]);
 
   const handlePlanTrip = async () => {
     if (!tripCity || !tripHours || !tripDate) {
