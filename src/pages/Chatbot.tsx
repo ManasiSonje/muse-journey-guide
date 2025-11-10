@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Play, Search, MapPin, Calendar, Lock, Clock, Navigation2, ArrowRight } from 'lucide-react';
+import { Send, Play, Search, MapPin, Calendar, Lock, Clock, Navigation2, ArrowRight, X } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import Navigation from '@/components/Navigation';
@@ -662,10 +662,20 @@ ${museum.description || 'No description available'}`;
             >
               <Card className="glass border-teal/20 p-8 glow-teal">
                 <div className="space-y-4 mb-6">
-                  <h3 className="font-display text-2xl font-bold text-foreground flex items-center">
-                    <Navigation2 className="w-6 h-6 mr-3 text-teal" />
-                    Your Trip Plan for {tripCity}
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-display text-2xl font-bold text-foreground flex items-center">
+                      <Navigation2 className="w-6 h-6 mr-3 text-teal" />
+                      Your Trip Plan for {tripCity}
+                    </h3>
+                    <EnhancedButton
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowTripResults(false)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="w-5 h-5" />
+                    </EnhancedButton>
+                  </div>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-golden" />
