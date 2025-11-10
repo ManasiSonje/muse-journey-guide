@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Play, Search, MapPin, Calendar, Lock } from 'lucide-react';
+import { Send, Play, Search, MapPin, Calendar, Lock, Clock, Navigation2, ArrowRight } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { format } from 'date-fns';
 import Navigation from '@/components/Navigation';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,12 @@ import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import YouTubeVideoEmbed from '@/components/YouTubeVideoEmbed';
+import MuseumCard from '@/components/MuseumCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { useMuseums } from '@/hooks/useMuseums';
+import { cn } from '@/lib/utils';
 import chatbotAvatar from '@/assets/chatbot-avatar.png';
 import { ChatbotFlowService, ConversationState } from '@/services/chatbotFlows';
 
@@ -26,6 +33,7 @@ interface Video {
 
 const Chatbot = () => {
   const { user, loading } = useAuth();
+  const { cities } = useMuseums();
   const [flowService] = useState(() => new ChatbotFlowService());
   const [conversationState, setConversationState] = useState<ConversationState>(() => 
     flowService.getInitialState()
@@ -35,9 +43,12 @@ const Chatbot = () => {
   const [selectedMuseumId, setSelectedMuseumId] = useState<string | null>(null);
 
   // Trip planning state
-  const [tripLocation, setTripLocation] = useState('');
-  const [tripDate, setTripDate] = useState('');
+  const [tripCity, setTripCity] = useState('');
+  const [tripDate, setTripDate] = useState<Date>();
   const [tripHours, setTripHours] = useState('');
+  const [tripResults, setTripResults] = useState<any[]>([]);
+  const [showTripResults, setShowTripResults] = useState(false);
+  const [tripLoading, setTripLoading] = useState(false);
   
   // Museum video state
   const [selectedMuseum, setSelectedMuseum] = useState('');
@@ -136,16 +147,104 @@ ${museum.description || 'No description available'}`;
     }
   };
 
-  const generateTrip = () => {
-    if (!tripLocation || !tripDate || !tripHours) return;
+  // City center coordinates (approximate)
+  const cityCenters: { [key: string]: { lat: number; lng: number } } = {
+    'Mumbai': { lat: 19.0760, lng: 72.8777 },
+    'Pune': { lat: 18.5204, lng: 73.8567 },
+    'Nagpur': { lat: 21.1458, lng: 79.0882 },
+    'Nashik': { lat: 19.9975, lng: 73.7898 },
+    'Aurangabad': { lat: 19.8762, lng: 75.3433 },
+    'Kolhapur': { lat: 16.7050, lng: 74.2433 }
+  };
+
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const generateTrip = async () => {
+    if (!tripCity || !tripHours || !tripDate) {
+      return;
+    }
+
+    setTripLoading(true);
+    setShowTripResults(false);
+
+    const { data: cityMuseums } = await supabase
+      .from('museums')
+      .select('*')
+      .ilike('city', `%${tripCity}%`);
+
+    if (!cityMuseums || cityMuseums.length === 0) {
+      setTripResults([]);
+      setShowTripResults(true);
+      setTripLoading(false);
+      return;
+    }
+
+    // Get day of week from selected date
+    const dayOfWeek = format(tripDate, 'EEEE').toLowerCase();
     
-    // Clear form
-    setTripLocation('');
-    setTripDate('');
-    setTripHours('');
+    // Always show top 3 museums
+    const maxMuseums = 3;
     
-    // For now, just reset to menu - could integrate with flows later
-    resetToMenu();
+    const availableMuseums = cityMuseums.filter(museum => {
+      if (!museum.detailed_timings) return true;
+      
+      const timings = museum.detailed_timings as any;
+      const dayTiming = timings[dayOfWeek]?.toLowerCase();
+      
+      // Check if museum is closed on selected day
+      if (!dayTiming || dayTiming === 'closed' || dayTiming.includes('closed')) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    // Sort by distance from city center
+    const cityCenter = cityCenters[tripCity];
+    
+    const museumsWithDistance = availableMuseums.map(museum => {
+      let distance = 999; // Default distance for museums without coordinates
+      
+      if (cityCenter && museum.latitude && museum.longitude) {
+        const lat = typeof museum.latitude === 'string' ? parseFloat(museum.latitude) : museum.latitude;
+        const lng = typeof museum.longitude === 'string' ? parseFloat(museum.longitude) : museum.longitude;
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          distance = calculateDistance(cityCenter.lat, cityCenter.lng, lat, lng);
+        }
+      }
+      
+      return { ...museum, distance };
+    });
+
+    museumsWithDistance.sort((a, b) => a.distance - b.distance);
+
+    setTripResults(museumsWithDistance.slice(0, maxMuseums));
+    setShowTripResults(true);
+    setTripLoading(false);
+
+    setTimeout(() => {
+      document.getElementById('trip-results')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const handleViewMore = (id: string) => {
+    console.log('View more:', id);
+  };
+
+  const handleBookTicket = (id: string) => {
+    console.log('Book ticket for:', id);
   };
 
   const searchYouTubeVideos = async (museumName: string) => {
@@ -295,37 +394,88 @@ ${museum.description || 'No description available'}`;
                   </div>
                   <div>
                     <h3 className="font-display text-lg font-semibold text-foreground">Trip Planner</h3>
-                    <p className="text-sm text-muted-foreground">AI-powered itinerary</p>
+                    <p className="text-sm text-muted-foreground">Plan your museum visit</p>
                   </div>
                 </div>
                 
                 <div className="space-y-3">
-                  <Input
-                    placeholder="City/Location"
-                    value={tripLocation}
-                    onChange={(e) => setTripLocation(e.target.value)}
-                    className="glass border-border/20"
-                  />
-                  <Input
-                    type="date"
-                    value={tripDate}
-                    onChange={(e) => setTripDate(e.target.value)}
-                    className="glass border-border/20"
-                  />
-                  <Input
-                    placeholder="Available hours (e.g., 6)"
-                    value={tripHours}
-                    onChange={(e) => setTripHours(e.target.value)}
-                    className="glass border-border/20"
-                  />
+                  <div className="space-y-2">
+                    <label className="text-xs text-muted-foreground">City</label>
+                    <Select value={tripCity} onValueChange={setTripCity}>
+                      <SelectTrigger className="glass border-border/20">
+                        <SelectValue placeholder="Select city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs text-muted-foreground">Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <EnhancedButton
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal glass",
+                            !tripDate && "text-muted-foreground"
+                          )}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {tripDate ? format(tripDate, "PPP") : "Pick a date"}
+                        </EnhancedButton>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={tripDate}
+                          onSelect={setTripDate}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs text-muted-foreground">Hours</label>
+                    <Select value={tripHours} onValueChange={setTripHours}>
+                      <SelectTrigger className="glass border-border/20">
+                        <SelectValue placeholder="Select hours" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2">2 hours</SelectItem>
+                        <SelectItem value="4">4 hours</SelectItem>
+                        <SelectItem value="6">6 hours</SelectItem>
+                        <SelectItem value="8">8 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <EnhancedButton
                     variant="premium"
                     size="sm"
                     onClick={generateTrip}
                     className="w-full"
+                    disabled={!tripCity || !tripHours || !tripDate || tripLoading}
                   >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Generate Trip
+                    {tripLoading ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                        Finding Museums...
+                      </>
+                    ) : (
+                      <>
+                        <Navigation2 className="w-4 h-4 mr-2" />
+                        Generate Trip
+                      </>
+                    )}
                   </EnhancedButton>
                 </div>
               </Card>
@@ -501,6 +651,67 @@ ${museum.description || 'No description available'}`;
               </Card>
             </div>
           </div>
+
+          {/* Trip Results */}
+          {showTripResults && (
+            <motion.div
+              id="trip-results"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="max-w-6xl mx-auto mt-6"
+            >
+              <Card className="glass border-teal/20 p-8 glow-teal">
+                <div className="space-y-4 mb-6">
+                  <h3 className="font-display text-2xl font-bold text-foreground flex items-center">
+                    <Navigation2 className="w-6 h-6 mr-3 text-teal" />
+                    Your Trip Plan for {tripCity}
+                  </h3>
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-golden" />
+                      <span>{tripDate ? format(tripDate, 'EEEE, MMMM d, yyyy') : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-teal" />
+                      <span>{tripHours} hours</span>
+                    </div>
+                  </div>
+                </div>
+
+                {tripResults.length > 0 ? (
+                  <>
+                    <p className="text-muted-foreground mb-6 flex items-center gap-2">
+                      <span className="font-semibold text-foreground">{tripResults.length}</span> 
+                      museum{tripResults.length !== 1 ? 's' : ''} recommended for your {tripHours}-hour visit
+                    </p>
+                    
+                    <div className="grid md:grid-cols-3 gap-6">
+                      {tripResults.map((museum, index) => (
+                        <motion.div
+                          key={museum.id}
+                          initial={{ y: 50, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <MuseumCard
+                            {...museum}
+                            onViewMore={handleViewMore}
+                            onBookTicket={handleBookTicket}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No museums found for {tripCity} on {tripDate ? format(tripDate, 'EEEE') : 'the selected day'}.
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>
