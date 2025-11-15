@@ -29,7 +29,7 @@ const Navigation = () => {
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="fixed top-0 w-full z-50 bg-background/95 border-b border-border backdrop-blur-xl shadow-lg"
+      className="fixed top-0 w-full z-50 bg-black/95 border-b border-white/10 backdrop-blur-xl shadow-lg"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -39,15 +39,15 @@ const Navigation = () => {
             <motion.div
               whileHover={{ rotate: 360, scale: 1.1 }}
               transition={{ duration: 0.6, type: "spring" }}
-              className="relative w-10 h-10 bg-foreground rounded-xl flex items-center justify-center shadow-md"
+              className="relative w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md"
             >
-              <Building2 className="w-5 h-5 text-background" />
+              <Building2 className="w-5 h-5 text-black" />
             </motion.div>
             <div className="flex flex-col">
-              <span className="font-display text-xl font-bold text-foreground">
+              <span className="font-display text-xl font-bold text-white">
                 ExhibitLink
               </span>
-              <span className="text-[10px] text-muted-foreground font-medium tracking-wider">
+              <span className="text-[10px] text-gray-400 font-medium tracking-wider">
                 MUSEUM EXPLORER
               </span>
             </div>
@@ -69,8 +69,8 @@ const Navigation = () => {
                     whileTap={{ scale: 0.95 }}
                     className={`relative px-4 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
                       active
-                        ? 'bg-foreground text-background shadow-md'
-                        : 'text-foreground hover:bg-muted hover:text-foreground'
+                        ? 'bg-white text-black shadow-md'
+                        : 'text-white hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -78,7 +78,7 @@ const Navigation = () => {
                     {active && (
                       <motion.div
                         layoutId="navIndicator"
-                        className="absolute inset-0 rounded-xl border-2 border-muted-foreground/20"
+                        className="absolute inset-0 rounded-xl border-2 border-gray-300/50"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}
@@ -91,8 +91,8 @@ const Navigation = () => {
           {/* Authentication Controls */}
           {loading ? (
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
-              <div className="hidden sm:block w-20 h-4 rounded bg-muted animate-pulse" />
+              <div className="w-10 h-10 rounded-xl bg-gray-800 animate-pulse" />
+              <div className="hidden sm:block w-20 h-4 rounded bg-gray-800 animate-pulse" />
             </div>
           ) : user ? (
             /* Profile Dropdown */
@@ -101,41 +101,41 @@ const Navigation = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-muted/50 border border-border hover:border-foreground/30 transition-all duration-300 hover:shadow-md"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-xl bg-white/10 border border-white/20 hover:border-white/40 transition-all duration-300 hover:shadow-md"
                 >
-                  <Avatar className="w-9 h-9 border-2 border-border">
-                    <AvatarFallback className="bg-foreground text-background font-bold text-sm">
+                  <Avatar className="w-9 h-9 border-2 border-white/30">
+                    <AvatarFallback className="bg-white text-black font-bold text-sm">
                       {profile?.full_name?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:flex flex-col items-start">
-                    <span className="text-sm font-semibold text-foreground">
+                    <span className="text-sm font-semibold text-white">
                       {profile?.full_name?.split(' ')[0] || 'User'}
                     </span>
                     {isAdmin && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <span className="text-[10px] text-gray-400 flex items-center gap-1">
                         <Sparkles className="w-2.5 h-2.5" />
                         Admin
                       </span>
                     )}
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                 </motion.button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-64 bg-background/98 border-border backdrop-blur-xl shadow-xl z-[100]"
+                className="w-64 bg-black/98 border-white/20 backdrop-blur-xl shadow-xl z-[100]"
               >
-                <div className="px-4 py-3 border-b border-border bg-muted/30">
-                  <p className="text-sm font-semibold text-foreground mb-0.5">
+                <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+                  <p className="text-sm font-semibold text-white mb-0.5">
                     {profile?.full_name || 'User'}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   {isAdmin && (
                     <motion.span 
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="inline-flex items-center text-xs text-foreground font-medium mt-2 px-2 py-1 rounded-md bg-muted border border-border"
+                      className="inline-flex items-center text-xs text-white font-medium mt-2 px-2 py-1 rounded-md bg-white/10 border border-white/20"
                     >
                       <Shield className="w-3 h-3 mr-1" />
                       Administrator
@@ -143,25 +143,25 @@ const Navigation = () => {
                   )}
                 </div>
                 <div className="py-1">
-                  <DropdownMenuItem className="hover:bg-muted cursor-pointer mx-1 rounded-lg transition-colors">
-                    <User className="w-4 h-4 mr-3 text-foreground" />
+                  <DropdownMenuItem className="hover:bg-white/10 cursor-pointer mx-1 rounded-lg transition-colors text-white">
+                    <User className="w-4 h-4 mr-3" />
                     <span className="font-medium">My Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-muted cursor-pointer mx-1 rounded-lg transition-colors">
-                    <Settings className="w-4 h-4 mr-3 text-foreground" />
+                  <DropdownMenuItem className="hover:bg-white/10 cursor-pointer mx-1 rounded-lg transition-colors text-white">
+                    <Settings className="w-4 h-4 mr-3" />
                     <span className="font-medium">Settings</span>
                   </DropdownMenuItem>
                   {isAdmin && (
-                    <DropdownMenuItem className="hover:bg-muted cursor-pointer mx-1 rounded-lg transition-colors">
-                      <Shield className="w-4 h-4 mr-3 text-foreground" />
+                    <DropdownMenuItem className="hover:bg-white/10 cursor-pointer mx-1 rounded-lg transition-colors text-white">
+                      <Shield className="w-4 h-4 mr-3" />
                       <span className="font-medium">Admin Panel</span>
                     </DropdownMenuItem>
                   )}
                 </div>
-                <DropdownMenuSeparator className="bg-border my-1" />
+                <DropdownMenuSeparator className="bg-white/10 my-1" />
                 <div className="py-1">
                   <DropdownMenuItem 
-                    className="hover:bg-destructive/10 cursor-pointer mx-1 rounded-lg transition-colors text-destructive focus:text-destructive"
+                    className="hover:bg-red-900/20 cursor-pointer mx-1 rounded-lg transition-colors text-red-400 focus:text-red-400"
                     onClick={signOut}
                   >
                     <LogOut className="w-4 h-4 mr-3" />
@@ -177,7 +177,7 @@ const Navigation = () => {
                 <EnhancedButton 
                   variant="ghost" 
                   size="sm" 
-                  className="border border-border hover:border-foreground/30 hover:bg-muted"
+                  className="border border-white/20 hover:border-white/40 hover:bg-white/10 text-white"
                 >
                   Login
                 </EnhancedButton>
@@ -186,7 +186,7 @@ const Navigation = () => {
                 <EnhancedButton 
                   variant="default" 
                   size="sm"
-                  className="bg-foreground text-background hover:bg-foreground/90"
+                  className="bg-white text-black hover:bg-gray-200"
                 >
                   Sign Up
                 </EnhancedButton>
