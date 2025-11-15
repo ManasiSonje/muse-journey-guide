@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { User, Settings, LogOut, Building2, MessageCircle, MapPin, Calendar, ChevronDown, Shield } from 'lucide-react';
+import { User, Settings, LogOut, Building2, MessageCircle, ChevronDown, Shield, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,51 +29,76 @@ const Navigation = () => {
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="fixed top-0 w-full z-50 glass border-b border-border/20"
+      className="fixed top-0 w-full z-50 glass-strong border-b border-golden/10 shadow-elevated backdrop-blur-xl"
     >
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           
           {/* Logo */}
           <Link to="/dashboard" className="flex items-center space-x-3 group">
             <motion.div
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-              className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center"
+              whileHover={{ rotate: 360, scale: 1.1 }}
+              transition={{ duration: 0.6, type: "spring" }}
+              className="relative w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-premium"
             >
               <Building2 className="w-5 h-5 text-black" />
+              <motion.div
+                className="absolute inset-0 rounded-xl bg-golden/20"
+                animate={{ opacity: [0, 0.5, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
             </motion.div>
-            <span className="font-display text-xl font-bold text-glow-golden">
-              ExhibitLink
-            </span>
+            <div className="flex flex-col">
+              <span className="font-display text-xl font-bold bg-gradient-to-r from-golden via-teal to-golden bg-clip-text text-transparent">
+                ExhibitLink
+              </span>
+              <span className="text-[10px] text-muted-foreground font-medium tracking-wider">
+                MUSEUM EXPLORER
+              </span>
+            </div>
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={`relative font-medium transition-smooth ${
-                  isActive(link.href)
-                    ? 'text-golden text-glow-golden'
-                    : 'text-foreground hover:text-golden'
-                }`}
-              >
-                <span className="relative z-10">{link.label}</span>
-                {isActive(link.href) && (
+          <div className="hidden md:flex items-center space-x-2">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const active = isActive(link.href);
+              
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                >
                   <motion.div
-                    layoutId="activeTab"
-                    className="absolute bottom-[-2px] left-0 right-0 h-0.5 bg-golden glow-golden"
-                  />
-                )}
-              </Link>
-            ))}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`relative px-4 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
+                      active
+                        ? 'bg-gradient-primary text-black shadow-premium'
+                        : 'text-foreground hover:bg-accent/50 hover:text-golden'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${active ? 'text-black' : ''}`} />
+                    <span className="relative z-10">{link.label}</span>
+                    {active && (
+                      <motion.div
+                        layoutId="navIndicator"
+                        className="absolute inset-0 rounded-xl border-2 border-golden/30"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                  </motion.div>
+                </Link>
+              );
+            })}
           </div>
 
           {/* Authentication Controls */}
           {loading ? (
-            <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 rounded-xl bg-muted/50 animate-pulse" />
+              <div className="hidden sm:block w-20 h-4 rounded bg-muted/50 animate-pulse" />
+            </div>
           ) : user ? (
             /* Profile Dropdown */
             <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -81,61 +106,84 @@ const Navigation = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center space-x-2 p-2 rounded-xl glass border border-border/20 hover:border-golden/50 transition-all duration-300 hover:glow-golden"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-xl glass-strong border border-golden/20 hover:border-golden/50 transition-all duration-300 hover:shadow-premium hover:glow-golden"
                 >
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-gradient-primary text-black font-semibold">
+                  <Avatar className="w-9 h-9 border-2 border-golden/30">
+                    <AvatarFallback className="bg-gradient-primary text-black font-bold text-sm">
                       {profile?.full_name?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  <div className="hidden sm:flex flex-col items-start">
+                    <span className="text-sm font-semibold text-foreground">
+                      {profile?.full_name?.split(' ')[0] || 'User'}
+                    </span>
+                    {isAdmin && (
+                      <span className="text-[10px] text-golden flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Admin
+                      </span>
+                    )}
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                 </motion.button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 glass border-border/20 bg-background/95 backdrop-blur-sm"
+                className="w-64 glass-strong border-golden/20 bg-background/95 backdrop-blur-xl shadow-elevated z-[100]"
               >
-                <div className="px-3 py-2 border-b border-border/20">
-                  <p className="text-sm font-medium text-foreground">
+                <div className="px-4 py-3 border-b border-border/20 bg-accent/5">
+                  <p className="text-sm font-semibold text-foreground mb-0.5">
                     {profile?.full_name || 'User'}
                   </p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   {isAdmin && (
-                    <span className="inline-flex items-center text-xs text-golden font-medium mt-1">
+                    <motion.span 
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="inline-flex items-center text-xs text-golden font-medium mt-2 px-2 py-1 rounded-md bg-golden/10 border border-golden/20"
+                    >
                       <Shield className="w-3 h-3 mr-1" />
-                      Admin
-                    </span>
+                      Administrator
+                    </motion.span>
                   )}
                 </div>
-                <DropdownMenuItem className="hover:bg-accent/50">
-                  <User className="w-4 h-4 mr-2" />
-                  My Trips
-                </DropdownMenuItem>
-                <DropdownMenuItem className="hover:bg-accent/50">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </DropdownMenuItem>
-                {isAdmin && (
-                  <DropdownMenuItem className="hover:bg-accent/50 text-golden">
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin Panel
+                <div className="py-1">
+                  <DropdownMenuItem className="hover:bg-accent/50 cursor-pointer mx-1 rounded-lg transition-colors">
+                    <User className="w-4 h-4 mr-3 text-teal" />
+                    <span className="font-medium">My Profile</span>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator className="bg-border/20" />
-                <DropdownMenuItem 
-                  className="hover:bg-accent/50 text-red-400"
-                  onClick={signOut}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </DropdownMenuItem>
+                  <DropdownMenuItem className="hover:bg-accent/50 cursor-pointer mx-1 rounded-lg transition-colors">
+                    <Settings className="w-4 h-4 mr-3 text-teal" />
+                    <span className="font-medium">Settings</span>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem className="hover:bg-accent/50 cursor-pointer mx-1 rounded-lg transition-colors">
+                      <Shield className="w-4 h-4 mr-3 text-golden" />
+                      <span className="font-medium text-golden">Admin Panel</span>
+                    </DropdownMenuItem>
+                  )}
+                </div>
+                <DropdownMenuSeparator className="bg-border/20 my-1" />
+                <div className="py-1">
+                  <DropdownMenuItem 
+                    className="hover:bg-destructive/10 cursor-pointer mx-1 rounded-lg transition-colors text-destructive focus:text-destructive"
+                    onClick={signOut}
+                  >
+                    <LogOut className="w-4 h-4 mr-3" />
+                    <span className="font-medium">Sign Out</span>
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             /* Login/Signup Buttons */
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <Link to="/login">
-                <EnhancedButton variant="ghost" size="sm" className="glass border-border/20 hover:border-golden/50 hover:glow-golden">
+                <EnhancedButton 
+                  variant="ghost" 
+                  size="sm" 
+                  className="glass-strong border-golden/20 hover:border-golden/50 hover:glow-golden hover:bg-accent/50"
+                >
                   Login
                 </EnhancedButton>
               </Link>
