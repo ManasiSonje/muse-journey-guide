@@ -21,8 +21,6 @@ const Navigation = () => {
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard', icon: Building2 },
     { href: '/chatbot', label: 'MuseMate', icon: MessageCircle },
-    { href: '/museums', label: 'Museums', icon: MapPin },
-    { href: '/trips', label: 'My Trips', icon: Calendar },
   ];
 
   const isActive = (href: string) => location.pathname === href;
