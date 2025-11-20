@@ -168,17 +168,17 @@ export class ChatbotFlowService {
     }
 
     if (museum.booking_link) {
-      // Direct redirect for booking
+      // Store booking link in state for user to click
       return {
-        message: `Redirecting you to book ${museum.name}...`,
+        message: `Great! I found ${museum.name}. Click the button below to book your tickets.`,
         nextState: {
           currentFlow: null,
           awaitingInput: null,
-          currentMessage: `Redirecting you to book ${museum.name}...`,
+          currentMessage: `Great! I found ${museum.name}. Click the button below to book your tickets.`,
           showInput: false,
-          showButtons: true
-        },
-        redirectUrl: museum.booking_link
+          showButtons: true,
+          tempData: { bookingLink: museum.booking_link, museumName: museum.name }
+        }
       };
     } else {
       const msg = `${museum.name} found, but no direct booking available. Please check their website for more information.`;
