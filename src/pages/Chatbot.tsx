@@ -76,10 +76,6 @@ const Chatbot = () => {
       const response = await flowService.processUserInput(inputValue, conversationState);
       console.log('Flow response:', response);
       
-      if (response.redirectUrl) {
-        window.open(response.redirectUrl, '_blank');
-      }
-      
       console.log('Setting new state:', response.nextState);
       setConversationState(response.nextState);
       setInputValue('');
@@ -560,18 +556,39 @@ ${museum.description || 'No description available'}`;
                         animate={{ opacity: 1, y: 0 }}
                         className="grid grid-cols-1 md:grid-cols-2 gap-4"
                       >
-                        {flowService.getMenuOptions().map((option) => (
-                          <EnhancedButton
-                            key={option.id}
-                            variant="museum"
-                            className="h-16 flex flex-col items-center justify-center space-y-2"
-                            onClick={() => handleOptionSelect(option.id)}
-                            disabled={isProcessing}
+                        {/* Show booking link button if available */}
+                        {conversationState.tempData?.bookingLink ? (
+                          <a
+                            href={conversationState.tempData.bookingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="md:col-span-2"
                           >
-                            <span className="text-2xl">{option.icon}</span>
-                            <span className="text-sm font-medium">{option.label}</span>
-                          </EnhancedButton>
-                        ))}
+                            <EnhancedButton
+                              variant="premium"
+                              className="w-full h-16 flex items-center justify-center gap-3"
+                            >
+                              <span className="text-2xl">🎫</span>
+                              <span className="text-base font-semibold">
+                                Book {conversationState.tempData.museumName} Now
+                              </span>
+                              <ArrowRight className="w-5 h-5 ml-2" />
+                            </EnhancedButton>
+                          </a>
+                        ) : (
+                          flowService.getMenuOptions().map((option) => (
+                            <EnhancedButton
+                              key={option.id}
+                              variant="museum"
+                              className="h-16 flex flex-col items-center justify-center space-y-2"
+                              onClick={() => handleOptionSelect(option.id)}
+                              disabled={isProcessing}
+                            >
+                              <span className="text-2xl">{option.icon}</span>
+                              <span className="text-sm font-medium">{option.label}</span>
+                            </EnhancedButton>
+                          ))
+                        )}
                       </motion.div>
                     )}
 
