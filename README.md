@@ -1,58 +1,29 @@
+# Muse Journey Guide
 
-## Project info
+A Java 17 and Spring Boot museum discovery application for Maharashtra, with museum search, trip planning, and MuseMate chat.
 
-## How can I edit this code?
+## Run locally
 
-**Use your preferred IDE**
+Requirements: Java 17+ and Maven 3.8+.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+mvn spring-boot:run
 ```
 
-**Edit a file directly in GitHub**
+Open [http://localhost:8080](http://localhost:8080).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Features
 
-**Use GitHub Codespaces**
+- Responsive museum discovery page with city/category filters and search.
+- Museum details endpoint: `GET /api/museums` and `GET /api/museums/{id}`.
+- Trip suggestions: `GET /api/trip-plan?city=Mumbai&date=2026-10-09`.
+- MuseMate chat: `POST /api/chat` with JSON such as `{"message":"Is Gateway of India open today?"}`.
+- Chat follow-ups can include the previous response's `contextMuseumId`.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+MuseMate answers from the museum collection bundled in the application and timestamps responses in India Standard Time. Opening hours and ticket prices are published app data, not live confirmations from museums; the chatbot does not perform external web search.
 
-## What technologies are used for this project?
+## Tests
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+mvn test
+```
